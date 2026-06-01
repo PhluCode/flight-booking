@@ -198,6 +198,20 @@ function mountShell(activePage) {
   }, { threshold: 0.12 });
   document.querySelectorAll(".reveal").forEach(el => io.observe(el));
 
+  // Back button at the breadcrumb level (every page that has a page-head)
+  const head = document.querySelector(".page-head");
+  if (head && !head.querySelector(".back-btn")) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "back-btn";
+    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg><span data-i18n="nav.back"></span>`;
+    btn.addEventListener("click", () => {
+      if (history.length > 1) history.back();
+      else location.href = "index.html";
+    });
+    head.prepend(btn);
+  }
+
   applyI18n();
 }
 

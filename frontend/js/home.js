@@ -9,34 +9,70 @@
   document.getElementById("promoImg").innerHTML = ART.jetFront;
   document.getElementById("promoArt").innerHTML = ICONS.arrowUpRight;
 
-  /* ---------- Booking widget (built dynamically so it re-renders on lang change) ---------- */
+  /* ---------- widget state ---------- */
   let activeTab = "flights";   // flights | cars
   let activeTrip = "oneway";   // oneway | round | multi
 
+  const MIN_DATE = "2026-06-01";
+  const MAX_DATE = "2026-06-14";
+  const clamp = (iso) => iso < MIN_DATE ? MIN_DATE : iso > MAX_DATE ? MAX_DATE : iso;
+  const todayISO = new Date().toISOString().slice(0, 10);
+
+  // selected airports (codes) — single source of truth
+  const sel = { from: "", to: "" };
+  const ap = { open: false, target: "from", query: "" };
+
+  // date-picker state
+  const dp = {
+    depart: clamp(todayISO),
+    return: null,
+    open: false,
+    target: "depart",
+    view: new Date(MIN_DATE + "T00:00:00"),
+  };
+
+  const MONTHS = {
+    en: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+    th: ["มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน","กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"],
+  };
+  const WEEKDAYS = { en: ["Mo","Tu","We","Th","Fr","Sa","Su"], th: ["จ.","อ.","พ.","พฤ.","ศ.","ส.","อา."] };
+
+  const isoOf = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+  function prettyDate(iso) {
+    if (!iso) return "";
+    const lang = I18nStore.get();
+    const d = new Date(iso + "T00:00:00");
+    return d.toLocaleDateString(lang === "th" ? "th-TH" : "en-GB",
+      { weekday: "short", day: "numeric", month: "short" });
+  }
+
+  /* ---------- field builders ---------- */
   function fieldFlights() {
+    const showReturn = activeTrip === "round";
     return `
-      <div class="field">
+      <div class="field ap-field" data-ap="from">
         <label>${ICONS.mapPin}<span data-i18n="field.from"></span></label>
-        <input id="fFrom" list="airportList" data-i18n-ph="field.from.ph" />
+        <div class="ap-display" id="apFromText"></div>
       </div>
       <div class="field-swap">
         <button class="swap-btn" id="swapBtn" type="button" aria-label="swap">${ICONS.swap}</button>
       </div>
-      <div class="field">
+      <div class="field ap-field" data-ap="to">
         <label>${ICONS.mapPin}<span data-i18n="field.to"></span></label>
-        <input id="fTo" list="airportList" data-i18n-ph="field.to.ph" />
+        <div class="ap-display" id="apToText"></div>
       </div>
-      <div class="field">
+      <div class="field dp-field" data-dp="depart">
         <label>${ICONS.calendar}<span data-i18n="field.depart"></span></label>
-        <input type="date" id="fDepart" />
+        <div class="dp-display" id="dpDepartText"></div>
       </div>
-      <div class="field" id="returnField">
+      ${showReturn ? `
+      <div class="field dp-field" data-dp="return" id="returnField">
         <label>${ICONS.calendar}<span data-i18n="field.return"></span></label>
-        <input type="date" id="fReturn" ${activeTrip === "oneway" ? "disabled" : ""} />
-      </div>
+        <div class="dp-display" id="dpReturnText"></div>
+      </div>` : ""}
       <div class="field">
         <label>${ICONS.user}<span data-i18n="field.traveler"></span></label>
-        <input type="number" id="fPax" min="1" max="9" value="1" />
+        <input type="number" id="fPax" min="1" max="6" value="1" />
       </div>
       <div class="field field-search">
         <button class="search-btn" id="searchBtn" type="button" aria-label="search">${ICONS.search}</button>
@@ -47,16 +83,16 @@
     return `
       <div class="field">
         <label>${ICONS.mapPin}<span data-i18n="field.pickup"></span></label>
-        <input id="cPickup" list="airportList" data-i18n-ph="field.pickup.ph" />
+        <input id="cPickup" list="airportList" data-i18n-ph="field.pickup.ph" onfocus="this.select()" autocomplete="off" />
       </div>
       <div class="field-swap"><button class="swap-btn" type="button" disabled style="opacity:.4">${ICONS.swap}</button></div>
       <div class="field">
         <label>${ICONS.calendar}<span data-i18n="field.depart"></span></label>
-        <input type="date" id="cFrom" />
+        <input type="date" id="cFrom" min="${MIN_DATE}" max="${MAX_DATE}" />
       </div>
       <div class="field">
         <label>${ICONS.calendar}<span data-i18n="field.return"></span></label>
-        <input type="date" id="cTo" />
+        <input type="date" id="cTo" min="${MIN_DATE}" max="${MAX_DATE}" />
       </div>
       <div class="field">
         <label>${ICONS.car}<span data-i18n="field.cartype"></span></label>
@@ -83,7 +119,8 @@
 
   function renderBooking() {
     const fieldsHtml = activeTab === "flights" ? fieldFlights() : fieldCars();
-    const fieldsCls = activeTab === "cars" ? 'data-layout="cars"' : "";
+    const fieldsCls = activeTab === "cars" ? 'data-layout="cars"'
+      : (activeTrip === "round" ? "" : 'data-layout="ow"');
     document.getElementById("booking-slot").innerHTML = `
       <div class="booking">
         <div class="booking-top">
@@ -110,7 +147,11 @@
           </div>
         </div>
 
-        <div class="fields" ${fieldsCls}>${fieldsHtml}</div>
+        <div class="fields-wrap">
+          <div class="fields" ${fieldsCls}>${fieldsHtml}</div>
+          <div class="ap-pop" id="apPop" hidden></div>
+          <div class="dp-pop" id="dpPop" hidden></div>
+        </div>
 
         <div class="booking-bottom">
           <div class="fare-options">
@@ -127,25 +168,150 @@
         ${Object.keys(AIRPORTS).map(c => `<option value="${c} — ${cityName(c, I18nStore.get())}"></option>`).join("")}
       </datalist>`;
 
-    // localize the class <option> labels (data-i18n doesn't touch option text by default)
     document.querySelectorAll("#fClass option[data-i18n-opt]").forEach(o => {
       o.textContent = t(o.getAttribute("data-i18n-opt"));
     });
     applyI18n();
+    syncAirportDisplays();
+    syncDateDisplays();
+    renderAirportPop();
+    renderCalendar();
+  }
+
+  /* ---------- custom airport dropdown ---------- */
+  function syncAirportDisplays() {
+    const lang = I18nStore.get();
+    const f = document.getElementById("apFromText");
+    if (f) f.textContent = sel.from ? `${sel.from} · ${cityName(sel.from, lang)}` : t("ap.pick");
+    const tt = document.getElementById("apToText");
+    if (tt) tt.textContent = sel.to ? `${sel.to} · ${cityName(sel.to, lang)}` : t("ap.pick");
+    document.querySelectorAll(".ap-field").forEach(el =>
+      el.classList.toggle("active", ap.open && el.dataset.ap === ap.target));
+  }
+
+  function buildApList() {
+    const lang = I18nStore.get();
+    const q = ap.query.trim().toLowerCase();
+    const other = ap.target === "from" ? sel.to : sel.from;  // exclude the opposite pick
+    const items = Object.keys(AIRPORTS).filter(code => {
+      if (code === other) return false;
+      if (!q) return true;
+      const a = AIRPORTS[code];
+      return `${code} ${a.city_en} ${a.city_th} ${a.country}`.toLowerCase().includes(q);
+    });
+    if (!items.length) return `<div class="ap-empty">${t("ap.none")}</div>`;
+    return items.map(code => {
+      const a = AIRPORTS[code];
+      const isSel = sel[ap.target] === code ? "selected" : "";
+      return `<button type="button" class="ap-item ${isSel}" data-ap-pick="${code}">
+        <span class="ap-code">${code}</span>
+        <span class="ap-name">${cityName(code, lang)} <span class="muted">· ${a.country}</span></span>
+      </button>`;
+    }).join("");
+  }
+
+  function renderAirportPop() {
+    const pop = document.getElementById("apPop");
+    if (!pop) return;
+    pop.hidden = !ap.open;
+    if (!ap.open) return;
+    pop.innerHTML = `
+      <div class="ap-search">${ICONS.search}
+        <input id="apSearch" type="search" autocomplete="off" placeholder="${t("ap.search")}" value="${ap.query}" />
+      </div>
+      <div class="ap-list" id="apList">${buildApList()}</div>`;
+    const inp = document.getElementById("apSearch");
+    if (inp) inp.focus();
+  }
+
+  /* ---------- custom date picker ---------- */
+  function syncDateDisplays() {
+    const d = document.getElementById("dpDepartText");
+    if (d) d.textContent = dp.depart ? prettyDate(dp.depart) : t("dp.pick");
+    const r = document.getElementById("dpReturnText");
+    if (r) r.textContent = dp.return ? prettyDate(dp.return) : t("dp.pick");
+    document.querySelectorAll(".dp-field").forEach(f =>
+      f.classList.toggle("active", dp.open && f.dataset.dp === dp.target));
+  }
+
+  function monthGrid(base) {
+    const lang = I18nStore.get();
+    const y = base.getFullYear(), m = base.getMonth();
+    const first = new Date(y, m, 1);
+    const startCol = (first.getDay() + 6) % 7;
+    const daysIn = new Date(y, m + 1, 0).getDate();
+    let cells = "";
+    for (let i = 0; i < startCol; i++) cells += `<span class="dp-cell dp-empty"></span>`;
+    for (let day = 1; day <= daysIn; day++) {
+      const iso = isoOf(new Date(y, m, day));
+      const disabled = iso < MIN_DATE || iso > MAX_DATE;
+      const isDep = iso === dp.depart, isRet = iso === dp.return;
+      const inRange = dp.depart && dp.return && iso > dp.depart && iso < dp.return;
+      const cls = [isDep ? "dp-start" : "", isRet ? "dp-end" : "", inRange ? "dp-inrange" : ""].join(" ").trim();
+      cells += disabled
+        ? `<span class="dp-cell dp-off">${day}</span>`
+        : `<button type="button" class="dp-cell ${cls}" data-day="${iso}">${day}</button>`;
+    }
+    return `
+      <div class="dp-month">
+        <div class="dp-mhead">${MONTHS[lang][m]} ${y}</div>
+        <div class="dp-weekdays">${WEEKDAYS[lang].map(w => `<span>${w}</span>`).join("")}</div>
+        <div class="dp-days">${cells}</div>
+      </div>`;
+  }
+
+  function renderCalendar() {
+    const pop = document.getElementById("dpPop");
+    if (!pop) return;
+    pop.hidden = !dp.open;
+    if (!dp.open) return;
+    const m1 = new Date(dp.view.getFullYear(), dp.view.getMonth(), 1);
+    const m2 = new Date(dp.view.getFullYear(), dp.view.getMonth() + 1, 1);
+    const minMonth = new Date(MIN_DATE + "T00:00:00");
+    const maxMonth = new Date(MAX_DATE + "T00:00:00");
+    const canPrev = m1 > new Date(minMonth.getFullYear(), minMonth.getMonth(), 1);
+    const canNext = m2 < new Date(maxMonth.getFullYear(), maxMonth.getMonth(), 1);
+    pop.innerHTML = `
+      <div class="dp-top">
+        <button type="button" class="dp-nav" data-nav="-1" ${canPrev ? "" : "disabled"}>‹</button>
+        <button type="button" class="dp-nav" data-nav="1" ${canNext ? "" : "disabled"}>›</button>
+      </div>
+      <div class="dp-grid">${monthGrid(m1)}${monthGrid(m2)}</div>
+      <div class="dp-foot"><span class="muted">${t("dp.window")}</span>
+        <button type="button" class="btn btn-dark dp-done" data-dp-done>${t("dp.done")}</button>
+      </div>`;
+  }
+
+  function pickDay(iso) {
+    if (activeTrip === "round") {
+      if (dp.target === "depart") {
+        dp.depart = iso;
+        if (dp.return && dp.return <= iso) dp.return = null;
+        dp.target = "return";
+      } else {
+        if (iso < dp.depart) { dp.depart = iso; dp.return = null; }
+        else { dp.return = iso; dp.open = false; }
+      }
+    } else {
+      dp.depart = iso;
+      dp.open = false;
+    }
+    syncDateDisplays();
+    renderCalendar();
   }
 
   /* ---------- Destination cards ---------- */
   function renderDestinations() {
     const lang = I18nStore.get();
     document.getElementById("destGrid").innerHTML = DESTINATIONS.map(d => {
-      const ap = AIRPORTS[d.code];
+      const apt = AIRPORTS[d.code];
       return `
-      <a href="flights.html?to=${d.code}" class="dest-card reveal">
+      <a href="flights.html?from=BKK&to=${d.code}&date=${clamp(todayISO)}" class="dest-card reveal">
         <div class="dest-media">${ART.city}</div>
         <div class="dest-body">
           <div>
             <h3>${cityName(d.code, lang)}</h3>
-            <div class="sub">${ap.country} · ${d.code}</div>
+            <div class="sub">${apt.country} · ${d.code}</div>
           </div>
           <div class="dest-price">
             <div class="from" data-i18n="dest.from"></div>
@@ -155,7 +321,6 @@
       </a>`;
     }).join("");
     applyI18n();
-    // re-observe newly added reveal cards
     document.querySelectorAll(".dest-card.reveal").forEach(el => el.classList.add("in"));
   }
 
@@ -176,17 +341,17 @@
     applyI18n();
   }
 
-  /* ---------- Event delegation for the booking widget ---------- */
+  /* ---------- Event delegation: clicks ---------- */
   document.getElementById("booking-slot").addEventListener("click", (e) => {
     const tabBtn = e.target.closest(".tab");
-    if (tabBtn) { activeTab = tabBtn.dataset.tab; renderBooking(); return; }
+    if (tabBtn) { activeTab = tabBtn.dataset.tab; dp.open = false; ap.open = false; renderBooking(); return; }
 
     const seg = e.target.closest("[data-trip]");
     if (seg) {
       activeTrip = seg.dataset.trip;
-      document.querySelectorAll("[data-trip]").forEach(s => s.classList.toggle("checked", s === seg));
-      const ret = document.getElementById("fReturn");
-      if (ret) ret.disabled = (activeTrip === "oneway");
+      if (activeTrip !== "round") dp.return = null;
+      dp.open = false; ap.open = false;
+      renderBooking();
       return;
     }
 
@@ -196,25 +361,82 @@
       return;
     }
 
+    // airport dropdown
+    const apField = e.target.closest(".ap-field");
+    if (apField) {
+      ap.target = apField.dataset.ap; ap.query = ""; ap.open = true;
+      dp.open = false; renderCalendar();
+      syncAirportDisplays(); renderAirportPop();
+      return;
+    }
+    const apPick = e.target.closest("[data-ap-pick]");
+    if (apPick) {
+      sel[ap.target] = apPick.dataset.apPick;   // data-ap-pick → dataset.apPick
+      ap.open = false;
+      syncAirportDisplays(); renderAirportPop();
+      return;
+    }
+
+    // date picker
+    const dpField = e.target.closest(".dp-field");
+    if (dpField) {
+      dp.target = dpField.dataset.dp; dp.open = true;
+      ap.open = false; renderAirportPop();
+      const anchor = dp[dp.target] || dp.depart || MIN_DATE;
+      dp.view = new Date(anchor + "T00:00:00"); dp.view.setDate(1);
+      const maxView = new Date(MAX_DATE + "T00:00:00"); maxView.setDate(1); maxView.setMonth(maxView.getMonth() - 1);
+      const minView = new Date(MIN_DATE + "T00:00:00"); minView.setDate(1);
+      if (dp.view > maxView) dp.view = maxView;
+      if (dp.view < minView) dp.view = minView;
+      syncDateDisplays(); renderCalendar();
+      return;
+    }
+    const nav = e.target.closest(".dp-nav");
+    if (nav) { dp.view.setMonth(dp.view.getMonth() + Number(nav.dataset.nav)); renderCalendar(); return; }
+    const day = e.target.closest(".dp-cell[data-day]");
+    if (day) { pickDay(day.dataset.day); return; }
+    if (e.target.closest("[data-dp-done]")) { dp.open = false; syncDateDisplays(); renderCalendar(); return; }
+
     if (e.target.closest("#swapBtn")) {
-      const a = document.getElementById("fFrom"), b = document.getElementById("fTo");
-      if (a && b) { const tmp = a.value; a.value = b.value; b.value = tmp; }
+      [sel.from, sel.to] = [sel.to, sel.from];
+      syncAirportDisplays();
       return;
     }
 
     if (e.target.closest("#searchBtn")) {
       const params = new URLSearchParams();
       if (activeTab === "flights") {
-        const from = document.getElementById("fFrom")?.value.trim().slice(0, 3).toUpperCase();
-        const to   = document.getElementById("fTo")?.value.trim().slice(0, 3).toUpperCase();
-        const date = document.getElementById("fDepart")?.value;
-        if (from) params.set("from", from);
-        if (to)   params.set("to", to);
-        if (date) params.set("date", date);
+        if (!sel.from || !sel.to) { toast("dp.err.airport"); return; }
+        if (sel.from === sel.to) { toast("dp.err.same"); return; }
+        params.set("from", sel.from);
+        params.set("to", sel.to);
+        params.set("date", dp.depart || clamp(todayISO));
+        if (dp.return) params.set("ret", dp.return);
         const cls = document.getElementById("fClass")?.value;
         if (cls) params.set("cls", cls);
+        const pax = document.getElementById("fPax")?.value;
+        if (pax) params.set("pax", pax);
       }
       location.href = "flights.html" + (params.toString() ? "?" + params.toString() : "");
+    }
+  });
+
+  /* ---------- airport search box typing ---------- */
+  document.getElementById("booking-slot").addEventListener("input", (e) => {
+    if (e.target.id === "apSearch") {
+      ap.query = e.target.value;
+      const list = document.getElementById("apList");
+      if (list) list.innerHTML = buildApList();
+    }
+  });
+
+  // close popovers when clicking outside the widget
+  document.addEventListener("click", (e) => {
+    if (dp.open && !e.target.closest(".dp-pop") && !e.target.closest(".dp-field")) {
+      dp.open = false; syncDateDisplays(); renderCalendar();
+    }
+    if (ap.open && !e.target.closest(".ap-pop") && !e.target.closest(".ap-field")) {
+      ap.open = false; syncAirportDisplays(); renderAirportPop();
     }
   });
 
