@@ -1,135 +1,187 @@
 import bcrypt from 'bcryptjs'
+import fs from 'node:fs'
+import path from 'node:path'
+import { fileURLToPath } from 'url'
 import db from './db.js'
 
-// Clear existing data
+/* =========================================================
+   seed.js — rebuilds the demo database.
+   Generates flights for EVERY airport pair (both directions)
+   so any origin/destination the user picks returns results.
+   Durations & prices are derived from real coordinates, so
+   the data looks believable without hand-writing each route.
+   Run with:  npm run seed
+   ========================================================= */
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const seedPath = path.join(__dirname, 'seed-data.sql')
+
+function importFromSql(filePath) {
+  const sql = fs.readFileSync(filePath, 'utf-8')
+  db.exec(sql)
+}
+
+if (fs.existsSync(seedPath)) {
+  importFromSql(seedPath)
+  console.log(`Seeded from ${seedPath}`)
+  process.exit(0)
+}
+
+// ---- Clear existing data (children first for FK integrity) ----
+// NOTE: the users table is deliberately KEPT so that registered accounts (and
+// their saved JWT tokens) survive a re-seed — otherwise a re-seed would delete
+// the user a token points to and every booking would fail with a FK error.
 db.exec(`
   DELETE FROM payments;  DELETE FROM passengers; DELETE FROM bookings;
   DELETE FROM seats;     DELETE FROM flights;    DELETE FROM airlines;
-  DELETE FROM airports;  DELETE FROM users;
+  DELETE FROM airports;
 `)
+// reset AUTOINCREMENT counters for the wiped tables only (NOT users)
+try { db.exec("DELETE FROM sqlite_sequence WHERE name != 'users'") } catch {}
 
+// ---- Demo user (password is hashed with bcrypt — never stored plain) ----
 const passwordHash = bcrypt.hashSync('password123', 10)
 db.prepare(
   'INSERT OR IGNORE INTO users (full_name, email, password_hash, phone) VALUES (?, ?, ?, ?)'
 ).run('Demo User', 'user@example.com', passwordHash, '0123456789')
 
-// Airports
-db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('BKK', 'Suvarnabhumi Airport',        'Bangkok',    'Thailand')
-db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('DMK', 'Don Mueang Airport',           'Bangkok',    'Thailand')
-db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('CNX', 'Chiang Mai Airport',           'Chiang Mai', 'Thailand')
-db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('HKT', 'Phuket International Airport', 'Phuket',     'Thailand')
-db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('SIN', 'Changi Airport',               'Singapore',  'Singapore')
+// ---- Airports (18, international) with coordinates [lat, lon] ----
+const AIRPORTS = [
+  // code, name, city, country, lat, lon
+  ['BKK', 'Suvarnabhumi Airport',          'Bangkok',          'Thailand',        13.69, 100.75],
+  ['DMK', 'Don Mueang Airport',            'Bangkok',          'Thailand',        13.91, 100.61],
+  ['CNX', 'Chiang Mai Airport',            'Chiang Mai',       'Thailand',        18.77,  98.96],
+  ['HKT', 'Phuket International Airport',   'Phuket',           'Thailand',         8.11,  98.31],
+  ['HDY', 'Hat Yai International Airport',  'Hat Yai',          'Thailand',         6.93, 100.39],
+  ['USM', 'Samui Airport',                 'Koh Samui',        'Thailand',         9.55, 100.06],
+  ['SIN', 'Changi Airport',                'Singapore',        'Singapore',        1.36, 103.99],
+  ['KUL', 'Kuala Lumpur Intl Airport',     'Kuala Lumpur',     'Malaysia',         2.74, 101.71],
+  ['HKG', 'Hong Kong Intl Airport',        'Hong Kong',        'Hong Kong',       22.31, 113.91],
+  ['HND', 'Tokyo Haneda Airport',          'Tokyo',            'Japan',           35.55, 139.78],
+  ['NRT', 'Tokyo Narita Airport',          'Tokyo',            'Japan',           35.77, 140.39],
+  ['ICN', 'Incheon Intl Airport',          'Seoul',            'South Korea',     37.46, 126.44],
+  ['TPE', 'Taoyuan Intl Airport',          'Taipei',           'Taiwan',          25.08, 121.23],
+  ['SGN', 'Tan Son Nhat Airport',          'Ho Chi Minh City', 'Vietnam',         10.82, 106.65],
+  ['DXB', 'Dubai Intl Airport',            'Dubai',            'UAE',             25.25,  55.36],
+  ['LHR', 'Heathrow Airport',              'London',           'United Kingdom',  51.47,  -0.45],
+  ['CDG', 'Charles de Gaulle Airport',     'Paris',            'France',          49.01,   2.55],
+  ['SYD', 'Kingsford Smith Airport',       'Sydney',           'Australia',      -33.94, 151.18],
+]
+const insertAirport = db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)')
+for (const [code, name, city, country] of AIRPORTS) insertAirport.run(code, name, city, country)
 
-// Airlines
-db.prepare('INSERT INTO airlines (code, name) VALUES (?,?)').run('TG', 'Thai Airways')
-db.prepare('INSERT INTO airlines (code, name) VALUES (?,?)').run('FD', 'Thai AirAsia')
-db.prepare('INSERT INTO airlines (code, name) VALUES (?,?)').run('SQ', 'Singapore Airlines')
+// quick coordinate lookup
+const COORD = {}
+for (const [code, , , country, lat, lon] of AIRPORTS) COORD[code] = { country, lat, lon }
+const THAI = new Set(AIRPORTS.filter(a => a[3] === 'Thailand').map(a => a[0]))
 
-// Helper: get IDs
-const airport = (code) => db.prepare('SELECT id FROM airports WHERE code = ?').get(code).id
-const airline = (code) => db.prepare('SELECT id FROM airlines WHERE code = ?').get(code).id
+// ---- Airlines (10) ----
+const AIRLINES = [
+  ['TG', 'Thai Airways'],     ['FD', 'Thai AirAsia'],
+  ['TR', 'Scoot'],            ['SQ', 'Singapore Airlines'],
+  ['CX', 'Cathay Pacific'],   ['BR', 'EVA Air'],
+  ['JL', 'Japan Airlines'],   ['KE', 'Korean Air'],
+  ['EK', 'Emirates'],         ['QF', 'Qantas'],
+]
+const insertAirline = db.prepare('INSERT INTO airlines (code, name) VALUES (?,?)')
+for (const a of AIRLINES) insertAirline.run(...a)
 
-// Flights
+// ---- Lookups ----
+const airportId = (code) => db.prepare('SELECT id FROM airports WHERE code = ?').get(code).id
+const airlineId = (code) => db.prepare('SELECT id FROM airlines WHERE code = ?').get(code).id
+const airportIds = Object.fromEntries(AIRPORTS.map(a => [a[0], airportId(a[0])]))
+const airlineIds = Object.fromEntries(AIRLINES.map(a => [a[0], airlineId(a[0])]))
+
+// ---- Great-circle distance (km) ----
+function distanceKm(a, b) {
+  const R = 6371, toRad = (d) => d * Math.PI / 180
+  const dLat = toRad(b.lat - a.lat), dLon = toRad(b.lon - a.lon)
+  const s = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLon / 2) ** 2
+  return 2 * R * Math.asin(Math.sqrt(s))
+}
+
+// airline pool by route type
+const DOMESTIC = ['TG', 'FD']
+const REGIONAL = ['TG', 'FD', 'TR', 'SQ', 'CX', 'BR', 'JL', 'KE']
+const LONGHAUL = ['TG', 'EK', 'QF', 'SQ', 'CX']
+function poolFor(from, to, dist) {
+  if (THAI.has(from) && THAI.has(to)) return DOMESTIC
+  if (dist > 5500) return LONGHAUL
+  return REGIONAL
+}
+
+// ---- Config ----
+const DAYS = 14                       // 2026-06-01 .. 2026-06-14
+const START = new Date('2026-06-01')
+const FLIGHTS_PER_ROUTE_PER_DAY = 10  // guarantees "10 results for every search"
+const SEAT_ROWS = 30                  // 30 x 6 = 180 seats / flight
+const SEAT_COLS = ['A', 'B', 'C', 'H', 'J', 'K']   // airline-style lettering (skips I, etc.)
+const TOTAL_SEATS = SEAT_ROWS * SEAT_COLS.length
+// NOTE: seats are created on demand (see flights.service.ensureSeats) so the
+// DB stays small — we don't pre-generate 180 seats for all 42k+ flights.
+// depart times spread across the day (~06:00–21:30)
+const SLOTS = [360, 465, 570, 660, 750, 840, 930, 1035, 1140, 1290]
+
 const insertFlight = db.prepare(`
-  INSERT INTO flights (flight_number, airline_id, origin_airport_id, destination_airport_id, departure_time, arrival_time, duration, price, total_seats, status)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, 60, 'scheduled')
+  INSERT INTO flights
+    (flight_number, airline_id, origin_airport_id, destination_airport_id,
+     departure_time, arrival_time, duration, price, stops, gate, total_seats, status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')
 `)
 
-const flights = [
-  // ── Jun 1 ──
-  ['TG100', 'TG', 'BKK', 'CNX', '2026-06-01 07:00:00', '2026-06-01 08:05:00',  65, 1800],
-  ['FD110', 'FD', 'BKK', 'CNX', '2026-06-01 11:00:00', '2026-06-01 12:05:00',  65, 1100],
-  ['TG112', 'TG', 'BKK', 'CNX', '2026-06-01 15:00:00', '2026-06-01 16:05:00',  65, 1900],
-  ['FD114', 'FD', 'BKK', 'CNX', '2026-06-01 18:30:00', '2026-06-01 19:35:00',  65, 1050],
-  ['TG102', 'TG', 'CNX', 'BKK', '2026-06-01 09:30:00', '2026-06-01 10:35:00',  65, 1800],
-  ['TG103', 'TG', 'CNX', 'BKK', '2026-06-01 13:00:00', '2026-06-01 14:05:00',  65, 1900],
-  ['FD115', 'FD', 'CNX', 'BKK', '2026-06-01 17:00:00', '2026-06-01 18:05:00',  65, 1100],
-  ['FD117', 'FD', 'CNX', 'BKK', '2026-06-01 20:00:00', '2026-06-01 21:05:00',  65,  980],
-  ['FD300', 'FD', 'BKK', 'HKT', '2026-06-01 08:00:00', '2026-06-01 09:25:00',  85, 1200],
-  ['TG310', 'TG', 'BKK', 'HKT', '2026-06-01 12:00:00', '2026-06-01 13:25:00',  85, 1900],
-  ['FD312', 'FD', 'BKK', 'HKT', '2026-06-01 16:00:00', '2026-06-01 17:25:00',  85, 1150],
-  ['FD302', 'FD', 'HKT', 'BKK', '2026-06-01 10:30:00', '2026-06-01 11:55:00',  85, 1200],
-  ['FD315', 'FD', 'HKT', 'BKK', '2026-06-01 14:00:00', '2026-06-01 15:25:00',  85, 1150],
-  ['TG317', 'TG', 'HKT', 'BKK', '2026-06-01 18:00:00', '2026-06-01 19:25:00',  85, 1900],
-  ['TG410', 'TG', 'BKK', 'SIN', '2026-06-01 10:00:00', '2026-06-01 12:20:00', 140, 3500],
-  ['FD412', 'FD', 'BKK', 'SIN', '2026-06-01 14:00:00', '2026-06-01 16:20:00', 140, 3200],
-  ['SQ414', 'SQ', 'BKK', 'SIN', '2026-06-01 16:30:00', '2026-06-01 18:50:00', 140, 4800],
-  ['TG416', 'TG', 'SIN', 'BKK', '2026-06-01 14:00:00', '2026-06-01 16:20:00', 140, 3800],
-  ['SQ418', 'SQ', 'SIN', 'BKK', '2026-06-01 20:00:00', '2026-06-01 22:20:00', 140, 4600],
-  // ── Jun 2 ──
-  ['TG120', 'TG', 'BKK', 'CNX', '2026-06-02 07:00:00', '2026-06-02 08:05:00',  65, 1800],
-  ['FD122', 'FD', 'BKK', 'CNX', '2026-06-02 11:00:00', '2026-06-02 12:05:00',  65, 1100],
-  ['TG124', 'TG', 'BKK', 'CNX', '2026-06-02 17:00:00', '2026-06-02 18:05:00',  65, 1750],
-  ['TG125', 'TG', 'CNX', 'BKK', '2026-06-02 09:30:00', '2026-06-02 10:35:00',  65, 1800],
-  ['FD127', 'FD', 'CNX', 'BKK', '2026-06-02 14:00:00', '2026-06-02 15:05:00',  65, 1100],
-  ['FD129', 'FD', 'CNX', 'BKK', '2026-06-02 19:00:00', '2026-06-02 20:05:00',  65,  980],
-  ['TG320', 'TG', 'BKK', 'HKT', '2026-06-02 08:30:00', '2026-06-02 09:55:00',  85, 1800],
-  ['FD322', 'FD', 'BKK', 'HKT', '2026-06-02 13:00:00', '2026-06-02 14:25:00',  85, 1200],
-  ['FD323', 'FD', 'HKT', 'BKK', '2026-06-02 11:00:00', '2026-06-02 12:25:00',  85, 1200],
-  ['TG325', 'TG', 'HKT', 'BKK', '2026-06-02 16:00:00', '2026-06-02 17:25:00',  85, 1800],
-  ['TG420', 'TG', 'BKK', 'SIN', '2026-06-02 10:00:00', '2026-06-02 12:20:00', 140, 3500],
-  ['SQ422', 'SQ', 'BKK', 'SIN', '2026-06-02 17:00:00', '2026-06-02 19:20:00', 140, 4700],
-  ['SQ423', 'SQ', 'SIN', 'BKK', '2026-06-02 09:00:00', '2026-06-02 11:20:00', 140, 4500],
-  ['FD501', 'FD', 'DMK', 'CNX', '2026-06-02 06:30:00', '2026-06-02 07:40:00',  70, 1100],
-  // ── Jun 3 ──
-  ['TG130', 'TG', 'BKK', 'CNX', '2026-06-03 09:00:00', '2026-06-03 10:05:00',  65, 1800],
-  ['FD132', 'FD', 'BKK', 'CNX', '2026-06-03 13:00:00', '2026-06-03 14:05:00',  65, 1100],
-  ['FD134', 'FD', 'BKK', 'CNX', '2026-06-03 19:00:00', '2026-06-03 20:05:00',  65,  990],
-  ['TG133', 'TG', 'CNX', 'BKK', '2026-06-03 07:30:00', '2026-06-03 08:35:00',  65, 1800],
-  ['FD135', 'FD', 'CNX', 'BKK', '2026-06-03 12:00:00', '2026-06-03 13:05:00',  65, 1100],
-  ['FD137', 'FD', 'CNX', 'BKK', '2026-06-03 17:30:00', '2026-06-03 18:35:00',  65, 1050],
-  ['FD330', 'FD', 'BKK', 'HKT', '2026-06-03 07:30:00', '2026-06-03 08:55:00',  85, 1200],
-  ['TG332', 'TG', 'BKK', 'HKT', '2026-06-03 15:00:00', '2026-06-03 16:25:00',  85, 1900],
-  ['FD331', 'FD', 'HKT', 'BKK', '2026-06-03 08:00:00', '2026-06-03 09:25:00',  85, 1300],
-  ['TG333', 'TG', 'HKT', 'BKK', '2026-06-03 14:00:00', '2026-06-03 15:25:00',  85, 1900],
-  ['SQ430', 'SQ', 'BKK', 'SIN', '2026-06-03 09:00:00', '2026-06-03 11:20:00', 140, 4200],
-  ['TG432', 'TG', 'BKK', 'SIN', '2026-06-03 14:00:00', '2026-06-03 16:20:00', 140, 3600],
-  ['TG433', 'TG', 'SIN', 'BKK', '2026-06-03 16:00:00', '2026-06-03 18:20:00', 140, 3800],
-  // ── Jun 4 ──
-  ['TG140', 'TG', 'BKK', 'CNX', '2026-06-04 08:00:00', '2026-06-04 09:05:00',  65, 1800],
-  ['FD142', 'FD', 'BKK', 'CNX', '2026-06-04 12:00:00', '2026-06-04 13:05:00',  65, 1050],
-  ['TG144', 'TG', 'BKK', 'CNX', '2026-06-04 18:00:00', '2026-06-04 19:05:00',  65, 1700],
-  ['TG141', 'TG', 'CNX', 'BKK', '2026-06-04 10:00:00', '2026-06-04 11:05:00',  65, 1800],
-  ['FD143', 'FD', 'CNX', 'BKK', '2026-06-04 15:00:00', '2026-06-04 16:05:00',  65, 1050],
-  ['FD145', 'FD', 'CNX', 'BKK', '2026-06-04 20:00:00', '2026-06-04 21:05:00',  65,  950],
-  ['TG340', 'TG', 'BKK', 'HKT', '2026-06-04 09:00:00', '2026-06-04 10:25:00',  85, 1900],
-  ['FD342', 'FD', 'BKK', 'HKT', '2026-06-04 14:00:00', '2026-06-04 15:25:00',  85, 1150],
-  ['FD341', 'FD', 'HKT', 'BKK', '2026-06-04 12:00:00', '2026-06-04 13:25:00',  85, 1200],
-  ['TG343', 'TG', 'HKT', 'BKK', '2026-06-04 17:30:00', '2026-06-04 18:55:00',  85, 1900],
-  ['TG440', 'TG', 'BKK', 'SIN', '2026-06-04 11:00:00', '2026-06-04 13:20:00', 140, 3500],
-  ['SQ441', 'SQ', 'SIN', 'BKK', '2026-06-04 10:00:00', '2026-06-04 12:20:00', 140, 4600],
-  // ── Jun 5 ──
-  ['TG150', 'TG', 'BKK', 'CNX', '2026-06-05 07:30:00', '2026-06-05 08:35:00',  65, 1800],
-  ['FD152', 'FD', 'BKK', 'CNX', '2026-06-05 11:30:00', '2026-06-05 12:35:00',  65, 1100],
-  ['FD154', 'FD', 'BKK', 'CNX', '2026-06-05 16:00:00', '2026-06-05 17:05:00',  65, 1000],
-  ['TG151', 'TG', 'CNX', 'BKK', '2026-06-05 09:00:00', '2026-06-05 10:05:00',  65, 1800],
-  ['FD153', 'FD', 'CNX', 'BKK', '2026-06-05 14:00:00', '2026-06-05 15:05:00',  65, 1100],
-  ['FD155', 'FD', 'CNX', 'BKK', '2026-06-05 18:30:00', '2026-06-05 19:35:00',  65,  980],
-  ['FD350', 'FD', 'BKK', 'HKT', '2026-06-05 08:00:00', '2026-06-05 09:25:00',  85, 1200],
-  ['TG352', 'TG', 'BKK', 'HKT', '2026-06-05 14:30:00', '2026-06-05 15:55:00',  85, 1850],
-  ['FD351', 'FD', 'HKT', 'BKK', '2026-06-05 10:00:00', '2026-06-05 11:25:00',  85, 1200],
-  ['TG353', 'TG', 'HKT', 'BKK', '2026-06-05 16:30:00', '2026-06-05 17:55:00',  85, 1850],
-  ['SQ450', 'SQ', 'BKK', 'SIN', '2026-06-05 13:00:00', '2026-06-05 15:20:00', 140, 4200],
-  ['FD452', 'FD', 'BKK', 'SIN', '2026-06-05 08:00:00', '2026-06-05 10:20:00', 140, 3100],
-  ['SQ451', 'SQ', 'SIN', 'BKK', '2026-06-05 09:00:00', '2026-06-05 11:20:00', 140, 4500],
-]
+const pad = (n) => String(n).padStart(2, '0')
+const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:00`
 
-for (const [num, al, orig, dest, dep, arr, dur, price] of flights) {
-  insertFlight.run(num, airline(al), airport(orig), airport(dest), dep, arr, dur, price)
-}
+// all ordered airport pairs (both directions)
+const codes = AIRPORTS.map(a => a[0])
+const pairs = []
+for (const from of codes) for (const to of codes) if (from !== to) pairs.push([from, to])
 
-// Generate seats for every flight (rows 1-10, cols A-F)
-const insertSeat = db.prepare("INSERT OR IGNORE INTO seats (flight_id, seat_number, class, status) VALUES (?, ?, ?, 'available')")
-const allFlights = db.prepare('SELECT id FROM flights').all()
-const cols = ['A','B','C','D','E','F']
+let flightCount = 0
+const flightNoCounter = {}
 
-for (const { id } of allFlights) {
-  for (let row = 1; row <= 10; row++) {
-    for (const col of cols) {
-      insertSeat.run(id, `${row}${col}`, row <= 2 ? 'business' : 'economy')
+db.exec('BEGIN')
+try {
+  for (let day = 0; day < DAYS; day++) {
+    for (const [from, to] of pairs) {
+      const dist = distanceKm(COORD[from], COORD[to])
+      const baseDur = Math.round(dist / 13) + 35           // ~780 km/h + buffer
+      const basePrice = dist * 2.4 + 700                   // THB
+      const pool = poolFor(from, to, dist)
+
+      for (let i = 0; i < FLIGHTS_PER_ROUTE_PER_DAY; i++) {
+        const al = pool[i % pool.length]
+
+        const dep = new Date(START)
+        dep.setDate(dep.getDate() + day)
+        dep.setHours(0, SLOTS[i % SLOTS.length], 0, 0)
+
+        const stops = dist > 4500 && i % 4 === 0 ? 1 : 0
+        const duration = baseDur + (i % 3) * 10 + stops * 70
+        const arr = new Date(dep.getTime() + duration * 60000)
+        const price = Math.round(basePrice * (0.85 + (i % 5) * 0.07) / 10) * 10
+        const gate = SEAT_COLS[i % SEAT_COLS.length] + (1 + (i % 9))
+
+        flightNoCounter[al] = (flightNoCounter[al] || 100) + 1
+        const flightNumber = `${al}${flightNoCounter[al]}`
+
+        insertFlight.run(
+          flightNumber, airlineIds[al], airportIds[from], airportIds[to],
+          fmt(dep), fmt(arr), duration, price, stops, gate, TOTAL_SEATS
+        )
+        flightCount++
+      }
     }
   }
+  db.exec('COMMIT')
+} catch (err) {
+  db.exec('ROLLBACK')
+  throw err
 }
 
-console.log(`Seeded: ${allFlights.length} flights, ${allFlights.length * 60} seats`)
+console.log(`Seeded: ${AIRPORTS.length} airports, ${AIRLINES.length} airlines`)
+console.log(`        ${flightCount} flights (seats created on demand, ${TOTAL_SEATS}/flight)`)
+console.log(`        ${pairs.length} routes x ${DAYS} days x ${FLIGHTS_PER_ROUTE_PER_DAY} flights`)
+console.log(`        Date window: 2026-06-01 .. 2026-06-${pad(DAYS)}`)
 console.log('Done! Run: npm run dev')

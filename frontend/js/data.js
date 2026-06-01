@@ -4,24 +4,39 @@
    Later this can be swapped for a real fetch('/api/...') call.
    ========================================================= */
 
+/* Codes & names mirror backend/seed.js (the real data source). */
 const AIRPORTS = {
-  BKK: { city_en: "Bangkok",    city_th: "กรุงเทพฯ",   country: "Thailand" },
-  CNX: { city_en: "Chiang Mai", city_th: "เชียงใหม่",  country: "Thailand" },
-  HKT: { city_en: "Phuket",     city_th: "ภูเก็ต",     country: "Thailand" },
-  HND: { city_en: "Tokyo",      city_th: "โตเกียว",    country: "Japan" },
-  ICN: { city_en: "Seoul",      city_th: "โซล",        country: "South Korea" },
-  SIN: { city_en: "Singapore",  city_th: "สิงคโปร์",   country: "Singapore" },
-  HKG: { city_en: "Hong Kong",  city_th: "ฮ่องกง",     country: "Hong Kong" },
-  LHR: { city_en: "London",     city_th: "ลอนดอน",     country: "United Kingdom" },
-  CDG: { city_en: "Paris",      city_th: "ปารีส",      country: "France" },
-  DXB: { city_en: "Dubai",      city_th: "ดูไบ",       country: "UAE" },
-  SYD: { city_en: "Sydney",     city_th: "ซิดนีย์",    country: "Australia" },
+  BKK: { city_en: "Bangkok",          city_th: "กรุงเทพฯ",       country: "Thailand" },
+  DMK: { city_en: "Bangkok (DMK)",    city_th: "กรุงเทพฯ (ดอนเมือง)", country: "Thailand" },
+  CNX: { city_en: "Chiang Mai",       city_th: "เชียงใหม่",       country: "Thailand" },
+  HKT: { city_en: "Phuket",           city_th: "ภูเก็ต",          country: "Thailand" },
+  HDY: { city_en: "Hat Yai",          city_th: "หาดใหญ่",        country: "Thailand" },
+  USM: { city_en: "Koh Samui",        city_th: "เกาะสมุย",       country: "Thailand" },
+  SIN: { city_en: "Singapore",        city_th: "สิงคโปร์",        country: "Singapore" },
+  KUL: { city_en: "Kuala Lumpur",     city_th: "กัวลาลัมเปอร์",   country: "Malaysia" },
+  HKG: { city_en: "Hong Kong",        city_th: "ฮ่องกง",          country: "Hong Kong" },
+  HND: { city_en: "Tokyo (Haneda)",   city_th: "โตเกียว (ฮาเนดะ)", country: "Japan" },
+  NRT: { city_en: "Tokyo (Narita)",   city_th: "โตเกียว (นาริตะ)", country: "Japan" },
+  ICN: { city_en: "Seoul",            city_th: "โซล",            country: "South Korea" },
+  TPE: { city_en: "Taipei",           city_th: "ไทเป",           country: "Taiwan" },
+  SGN: { city_en: "Ho Chi Minh City", city_th: "โฮจิมินห์",       country: "Vietnam" },
+  DXB: { city_en: "Dubai",            city_th: "ดูไบ",           country: "UAE" },
+  LHR: { city_en: "London",           city_th: "ลอนดอน",         country: "United Kingdom" },
+  CDG: { city_en: "Paris",            city_th: "ปารีส",          country: "France" },
+  SYD: { city_en: "Sydney",           city_th: "ซิดนีย์",        country: "Australia" },
 };
 
 const AIRLINES = {
   TG: { name: "Thai Airways",       code: "TG" },
   FD: { name: "Thai AirAsia",       code: "FD" },
+  TR: { name: "Scoot",              code: "TR" },
   SQ: { name: "Singapore Airlines", code: "SQ" },
+  CX: { name: "Cathay Pacific",     code: "CX" },
+  BR: { name: "EVA Air",            code: "BR" },
+  JL: { name: "Japan Airlines",     code: "JL" },
+  KE: { name: "Korean Air",         code: "KE" },
+  EK: { name: "Emirates",           code: "EK" },
+  QF: { name: "Qantas",             code: "QF" },
 };
 
 /* Flight catalog (rendered dynamically on flights.html) */
