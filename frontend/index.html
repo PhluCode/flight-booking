@@ -1,12 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SkyBook — Flight Booking</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERIS — Where to Fly?</title>
+  <meta name="description" content="Find countless flight options & deals to destinations around the world." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="nav-slot"></div>
+
+  <main>
+    <!-- HERO -->
+    <section class="hero">
+      <div class="container">
+        <div class="hero-head">
+          <h1 class="hero-title" data-i18n="hero.title"></h1>
+          <p class="hero-sub" data-i18n="hero.sub"></p>
+        </div>
+
+        <div class="hero-stage">
+          <div class="hero-promo-float">
+            <div class="promo-card reveal">
+              <div class="promo-top">
+                <span class="promo-badge">-20%</span>
+                <span class="promo-arrow" id="promoArt"></span>
+              </div>
+              <div class="promo-img" id="promoImg"></div>
+              <h3 data-i18n="hero.promo.tag"></h3>
+            </div>
+          </div>
+          <div class="hero-plane-wrap">
+            <div class="hero-plane" id="heroPlane"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- BOOKING WIDGET -->
+    <section class="container" style="margin-top:-20px">
+      <h2 class="hero-cta-line" data-i18n="hero.cta"></h2>
+      <div id="booking-slot"></div>
+    </section>
+
+    <!-- STATS -->
+    <section class="section-sm">
+      <div class="container">
+        <div class="stats">
+          <div class="stat reveal"><div class="num">190+</div><div class="lbl" data-i18n="stat.destinations"></div></div>
+          <div class="stat reveal"><div class="num">60+</div><div class="lbl" data-i18n="stat.airlines"></div></div>
+          <div class="stat reveal"><div class="num">2.4M</div><div class="lbl" data-i18n="stat.customers"></div></div>
+          <div class="stat reveal"><div class="num">4.9★</div><div class="lbl" data-i18n="stat.rating"></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DESTINATIONS -->
+    <section class="section">
+      <div class="container">
+        <div class="row" style="justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:14px; margin-bottom:30px">
+          <div>
+            <span class="eyebrow" data-i18n="dest.title"></span>
+            <h2 class="section-title" data-i18n="dest.title"></h2>
+            <p class="section-sub" data-i18n="dest.sub"></p>
+          </div>
+          <a href="flights.html" class="btn btn-light" data-i18n="dest.viewall"></a>
+        </div>
+        <div class="cards-grid" id="destGrid"></div>
+      </div>
+    </section>
+
+    <!-- WHY US -->
+    <section class="section" style="background:var(--bg-soft)">
+      <div class="container">
+        <div class="center" style="margin-bottom:36px">
+          <h2 class="section-title" data-i18n="why.title"></h2>
+          <p class="section-sub" style="margin:0 auto" data-i18n="why.sub"></p>
+        </div>
+        <div class="info-tiles" id="whyGrid"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/home.js"></script>
+</body>
 </html>

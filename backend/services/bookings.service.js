@@ -39,7 +39,7 @@ export const getBookingsByUser = (userId) => {
   return db.prepare(`
     SELECT
       b.id, b.booking_reference, b.status, b.total_price, b.created_at,
-      f.flight_number, f.departure_time,
+      f.flight_number, f.departure_time, f.arrival_time, f.duration,
       o.code AS origin_code,
       d.code AS destination_code
     FROM bookings b

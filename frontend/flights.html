@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERIS — Flights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="nav-slot"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb"><a href="index.html" data-i18n="nav.home"></a><span>/</span><span data-i18n="nav.flights"></span></div>
+      <h1 data-i18n="results.title"></h1>
+    </div>
+
+    <div class="results-layout">
+      <!-- FILTERS -->
+      <aside class="filter-card">
+        <div class="row" style="justify-content:space-between; margin-bottom:6px">
+          <strong data-i18n="filter.title"></strong>
+          <button class="btn btn-ghost" id="resetFilters" style="padding:6px 12px;font-size:.85rem" data-i18n="filter.reset"></button>
+        </div>
+
+        <div class="filter-group">
+          <h4 data-i18n="filter.stops"></h4>
+          <label class="check"><input type="checkbox" class="f-stops" value="0" /> <span data-i18n="filter.nonstop"></span></label>
+          <label class="check"><input type="checkbox" class="f-stops" value="1" /> <span data-i18n="filter.onestop"></span></label>
+        </div>
+
+        <div class="filter-group">
+          <h4 data-i18n="filter.airlines"></h4>
+          <div id="airlineFilters"></div>
+        </div>
+
+        <div class="filter-group">
+          <h4 data-i18n="filter.price"></h4>
+          <input type="range" id="priceRange" min="1000" max="32000" step="500" value="32000" />
+          <div class="range-val"><span>฿1,000</span><span id="priceMax">฿32,000</span></div>
+        </div>
+
+        <div class="filter-group">
+          <h4 data-i18n="filter.times"></h4>
+          <label class="check"><input type="checkbox" class="f-time" value="morning" /> <span data-i18n="time.morning"></span> · 00–12</label>
+          <label class="check"><input type="checkbox" class="f-time" value="afternoon" /> <span data-i18n="time.afternoon"></span> · 12–18</label>
+          <label class="check"><input type="checkbox" class="f-time" value="evening" /> <span data-i18n="time.evening"></span> · 18–24</label>
+        </div>
+      </aside>
+
+      <!-- RESULTS -->
+      <section>
+        <div class="results-head">
+          <div class="search-input">
+            <span id="searchIcon"></span>
+            <input type="search" id="keyword" data-i18n-ph="results.searchph" autocomplete="off" />
+          </div>
+          <select class="sort-select" id="sortBy">
+            <option value="cheapest" data-i18n-opt="sort.cheapest"></option>
+            <option value="fastest" data-i18n-opt="sort.fastest"></option>
+            <option value="earliest" data-i18n-opt="sort.earliest"></option>
+          </select>
+        </div>
+        <p class="muted" style="margin:-6px 0 18px"><strong id="resultCount">0</strong> <span data-i18n="results.sub"></span></p>
+
+        <div id="flightList"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/flights.js"></script>
+</body>
+</html>

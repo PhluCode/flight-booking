@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERIS — Booking History</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="nav-slot"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb"><a href="index.html" data-i18n="nav.home"></a><span>/</span><span data-i18n="book.crumb"></span></div>
+      <h1 data-i18n="book.title"></h1>
+      <p class="muted" data-i18n="book.sub"></p>
+    </div>
+
+    <div class="filter-tabs" id="bookFilters" style="margin:14px 0 26px">
+      <button class="active" data-filter="all" data-i18n="bfilter.all"></button>
+      <button data-filter="upcoming" data-i18n="bfilter.upcoming"></button>
+      <button data-filter="completed" data-i18n="bfilter.completed"></button>
+      <button data-filter="cancelled" data-i18n="bfilter.cancelled"></button>
+    </div>
+
+    <div id="bookingList" style="margin-bottom:60px"></div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/bookings.js"></script>
+</body>
+</html>
