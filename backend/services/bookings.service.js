@@ -1,16 +1,60 @@
 import db from '../db.js'
+import { ensureSeats } from './flights.service.js'
 
 function generateReference() {
-  return Math.random().toString(36).substring(2, 10).toUpperCase()
+  return 'AERIS-' + Math.random().toString(36).substring(2, 8).toUpperCase()
 }
 
-export const createBooking = ({ userId, flight_id, passengers, payment_method, total_price }) => {
+/* =========================================================
+   createBooking — the transactional checkout.
+   Gatekeeper Pattern: never trust the client. We re-read the
+   flight price from the DB and re-check seat availability
+   *inside* the transaction, so the recorded total and the
+   seats can't be tampered with from the browser.
+   ========================================================= */
+export const createBooking = ({ userId, flight_id, passengers, payment_method, cabin_class }) => {
+  if (!Array.isArray(passengers) || passengers.length === 0) {
+    const e = new Error('At least one passenger is required'); e.status = 400; throw e
+  }
+
+  // 0. The user the token points to must still exist (clearer than a raw FK error)
+  if (!db.prepare('SELECT 1 FROM users WHERE id = ?').get(userId)) {
+    const e = new Error('Your session has expired. Please log in again.'); e.status = 401; throw e
+  }
+
+  // 1. Flight must exist and be bookable (checked before the txn so we can
+  //    lazily generate its seats — ensureSeats runs its own transaction).
+  const flight = db.prepare('SELECT id, price, status FROM flights WHERE id = ?').get(flight_id)
+  if (!flight || flight.status === 'cancelled') {
+    const e = new Error('Flight not available'); e.status = 404; throw e
+  }
+  ensureSeats(flight_id)
+
   db.exec('BEGIN')
   try {
+    // 2. Re-validate every chosen seat is real AND still free (concurrency-safe).
+    //    Premium (business) seats add a fee — computed here, never trusted from the client.
+    const SEAT_PREMIUM = 1000
+    let seatFees = 0
+    for (const p of passengers) {
+      if (!p.seat_number) { const e = new Error('Seat is required'); e.status = 400; throw e }
+      const seat = db.prepare(
+        'SELECT status, class FROM seats WHERE flight_id = ? AND seat_number = ?'
+      ).get(flight_id, p.seat_number)
+      if (!seat) { const e = new Error(`Seat ${p.seat_number} does not exist`); e.status = 400; throw e }
+      if (seat.status === 'occupied') {
+        const e = new Error(`Seat ${p.seat_number} is already taken`); e.status = 409; throw e
+      }
+      if (seat.class === 'business') seatFees += SEAT_PREMIUM
+    }
+
+    // 3. Server computes the real total — the client's number is ignored
+    const total_price = flight.price * passengers.length + seatFees
+
     const { lastInsertRowid: bookingId } = db.prepare(`
-      INSERT INTO bookings (user_id, flight_id, booking_reference, status, total_price)
-      VALUES (?, ?, ?, 'confirmed', ?)
-    `).run(userId, flight_id, generateReference(), total_price)
+      INSERT INTO bookings (user_id, flight_id, booking_reference, status, cabin_class, total_price)
+      VALUES (?, ?, ?, 'confirmed', ?, ?)
+    `).run(userId, flight_id, generateReference(), cabin_class || 'Economy', total_price)
 
     for (const p of passengers) {
       db.prepare(`
@@ -18,14 +62,15 @@ export const createBooking = ({ userId, flight_id, passengers, payment_method, t
         VALUES (?, ?, ?, ?, ?)
       `).run(bookingId, p.first_name, p.last_name, p.passport_number ?? null, p.seat_number)
 
-      db.prepare(`UPDATE seats SET status = 'occupied' WHERE flight_id = ? AND seat_number = ?`)
+      db.prepare("UPDATE seats SET status = 'occupied' WHERE flight_id = ? AND seat_number = ?")
         .run(flight_id, p.seat_number)
     }
 
+    // 4. Record the (simulated) payment — assignment says "bypass the payment process"
     db.prepare(`
       INSERT INTO payments (booking_id, amount, status, payment_method, paid_at)
       VALUES (?, ?, 'paid', ?, datetime('now'))
-    `).run(bookingId, total_price, payment_method)
+    `).run(bookingId, total_price, payment_method || 'card')
 
     db.exec('COMMIT')
     return db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId)
@@ -38,17 +83,52 @@ export const createBooking = ({ userId, flight_id, passengers, payment_method, t
 export const getBookingsByUser = (userId) => {
   return db.prepare(`
     SELECT
-      b.id, b.booking_reference, b.status, b.total_price, b.created_at,
-      f.flight_number, f.departure_time, f.arrival_time, f.duration,
-      o.code AS origin_code,
-      d.code AS destination_code
+      b.id, b.booking_reference, b.status, b.cabin_class, b.total_price, b.created_at,
+      f.flight_number, f.departure_time, f.arrival_time, f.duration, f.gate,
+      al.code AS airline_code,
+      al.name AS airline_name,
+      o.code  AS origin_code,
+      d.code  AS destination_code,
+      (SELECT COUNT(*)    FROM passengers p WHERE p.booking_id = b.id)            AS passenger_count,
+      (SELECT seat_number FROM passengers p WHERE p.booking_id = b.id LIMIT 1)    AS seat
     FROM bookings b
     JOIN flights  f ON b.flight_id              = f.id
+    JOIN airlines al ON f.airline_id            = al.id
     JOIN airports o ON f.origin_airport_id      = o.id
     JOIN airports d ON f.destination_airport_id = d.id
     WHERE b.user_id = ?
     ORDER BY b.created_at DESC
   `).all(userId)
+}
+
+/* Full detail for the e-ticket view (booking + flight + passengers + payment) */
+export const getBookingDetail = (bookingId, userId) => {
+  const booking = db.prepare(`
+    SELECT
+      b.id, b.booking_reference, b.status, b.cabin_class, b.total_price, b.created_at,
+      f.flight_number, f.departure_time, f.arrival_time, f.duration, f.gate, f.stops,
+      al.code AS airline_code,
+      al.name AS airline_name,
+      o.code  AS origin_code,  o.city AS origin_city,  o.name AS origin_name,
+      d.code  AS destination_code, d.city AS destination_city, d.name AS destination_name
+    FROM bookings b
+    JOIN flights  f ON b.flight_id              = f.id
+    JOIN airlines al ON f.airline_id            = al.id
+    JOIN airports o ON f.origin_airport_id      = o.id
+    JOIN airports d ON f.destination_airport_id = d.id
+    WHERE b.id = ? AND b.user_id = ?
+  `).get(bookingId, userId)
+
+  if (!booking) { const e = new Error('Booking not found'); e.status = 404; throw e }
+
+  booking.passengers = db.prepare(
+    'SELECT first_name, last_name, passport_number, seat_number FROM passengers WHERE booking_id = ?'
+  ).all(bookingId)
+  booking.payment = db.prepare(
+    'SELECT amount, status, payment_method, paid_at FROM payments WHERE booking_id = ?'
+  ).get(bookingId)
+
+  return booking
 }
 
 export const cancelBooking = (bookingId, userId) => {
@@ -57,7 +137,7 @@ export const cancelBooking = (bookingId, userId) => {
     const booking = db.prepare(
       'SELECT id, flight_id FROM bookings WHERE id = ? AND user_id = ?'
     ).get(bookingId, userId)
-    if (!booking) throw new Error('Booking not found')
+    if (!booking) { const e = new Error('Booking not found'); e.status = 404; throw e }
 
     db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(bookingId)
 

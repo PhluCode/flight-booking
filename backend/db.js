@@ -42,7 +42,8 @@ db.exec(`
     arrival_time           DATETIME NOT NULL,
     duration               INTEGER NOT NULL,
     price                  REAL NOT NULL,
-    cabin_class            TEXT NOT NULL DEFAULT 'economy',
+    stops                  INTEGER NOT NULL DEFAULT 0,
+    gate                   TEXT,
     total_seats            INTEGER NOT NULL,
     status                 TEXT DEFAULT 'scheduled'
   );
@@ -62,6 +63,7 @@ db.exec(`
     flight_id         INTEGER REFERENCES flights(id),
     booking_reference TEXT UNIQUE NOT NULL,
     status            TEXT DEFAULT 'pending',
+    cabin_class       TEXT DEFAULT 'Economy',
     total_price       REAL NOT NULL,
     created_at        DATETIME DEFAULT CURRENT_TIMESTAMP
   );

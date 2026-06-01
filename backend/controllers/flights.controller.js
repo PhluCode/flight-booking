@@ -19,6 +19,16 @@ export const searchFlights = async (req, res) => {
   }
 }
 
+export const getFlight = async (req, res) => {
+  try {
+    const flight = await flightsService.getFlightById(req.params.id)
+    if (!flight) return res.status(404).json({ message: 'Flight not found' })
+    res.json(flight)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+}
+
 export const getSeats = async (req, res) => {
   try {
     const seats = await flightsService.getSeatsByFlight(req.params.id)

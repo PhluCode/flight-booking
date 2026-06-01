@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERIS — Checkout</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="nav-slot"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="nav.home"></a><span>/</span>
+        <a href="flights.html" data-i18n="nav.flights"></a><span>/</span>
+        <span data-i18n="co.crumb"></span>
+      </div>
+      <h1 data-i18n="co.title"></h1>
+    </div>
+
+    <!-- filled by checkout.js (or shows an error/empty state) -->
+    <div id="checkoutRoot"></div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/checkout.js"></script>
+</body>
+</html>

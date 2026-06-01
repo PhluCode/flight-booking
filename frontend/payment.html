@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AERIS — Payment Methods</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div id="nav-slot"></div>
+
+  <main class="container">
+    <div class="page-head">
+      <div class="breadcrumb">
+        <a href="index.html" data-i18n="nav.home"></a><span>/</span>
+        <a href="profile.html" data-i18n="profile.crumb"></a><span>/</span>
+        <span data-i18n="pm.crumb"></span>
+      </div>
+      <h1 data-i18n="pm.title"></h1>
+      <p class="muted" data-i18n="pm.lede"></p>
+    </div>
+
+    <div class="pm-layout">
+      <section class="co-card pm-form">
+        <div id="savedCard"></div>
+
+        <div class="pay-methods" id="pmMethods">
+          <label class="pay-opt" data-method="card"><span class="dot"></span><span data-i18n="co.pay.card"></span></label>
+          <label class="pay-opt" data-method="promptpay"><span class="dot"></span><span data-i18n="co.pay.promptpay"></span></label>
+        </div>
+
+        <div id="pmCardFields">
+          <label class="fld"><span data-i18n="co.card.name"></span>
+            <input id="cardName" autocomplete="off" />
+          </label>
+          <label class="fld"><span data-i18n="co.card.number"></span>
+            <input id="cardNumber" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242" autocomplete="off" />
+          </label>
+          <div class="pax-fields">
+            <label class="fld"><span data-i18n="co.card.exp"></span>
+              <input id="cardExp" inputmode="numeric" maxlength="5" placeholder="MM/YY" autocomplete="off" />
+            </label>
+          </div>
+        </div>
+
+        <p class="muted pm-note" data-i18n="pm.note"></p>
+        <div class="fld-err" id="pmErr"></div>
+        <button class="btn btn-dark" id="pmSave" data-i18n="pm.save"></button>
+      </section>
+    </div>
+  </main>
+
+  <div id="footer-slot"></div>
+
+  <script src="js/icons.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+  <script src="js/payment.js"></script>
+</body>
+</html>
