@@ -10,8 +10,8 @@
   document.getElementById("promoArt").innerHTML = ICONS.arrowUpRight;
 
   /* ---------- Booking widget (built dynamically so it re-renders on lang change) ---------- */
-  let activeTab = "flights";   // flights | cars
-  let activeTrip = "oneway";   // oneway | round | multi
+  let activeTab = "flights";
+  let activeTrip = "oneway";   // oneway | round
 
   function fieldFlights() {
     return `
@@ -30,10 +30,12 @@
         <label>${ICONS.calendar}<span data-i18n="field.depart"></span></label>
         <input type="date" id="fDepart" />
       </div>
+      ${activeTrip !== "oneway" ? `
       <div class="field" id="returnField">
         <label>${ICONS.calendar}<span data-i18n="field.return"></span></label>
-        <input type="date" id="fReturn" ${activeTrip === "oneway" ? "disabled" : ""} />
+        <input type="date" id="fReturn" />
       </div>
+      ` : ""}
       <div class="field">
         <label>${ICONS.user}<span data-i18n="field.traveler"></span></label>
         <input type="number" id="fPax" min="1" max="9" value="1" />
@@ -43,37 +45,11 @@
       </div>`;
   }
 
-  function fieldCars() {
-    return `
-      <div class="field">
-        <label>${ICONS.mapPin}<span data-i18n="field.pickup"></span></label>
-        <input id="cPickup" list="airportList" data-i18n-ph="field.pickup.ph" />
-      </div>
-      <div class="field-swap"><button class="swap-btn" type="button" disabled style="opacity:.4">${ICONS.swap}</button></div>
-      <div class="field">
-        <label>${ICONS.calendar}<span data-i18n="field.depart"></span></label>
-        <input type="date" id="cFrom" />
-      </div>
-      <div class="field">
-        <label>${ICONS.calendar}<span data-i18n="field.return"></span></label>
-        <input type="date" id="cTo" />
-      </div>
-      <div class="field">
-        <label>${ICONS.car}<span data-i18n="field.cartype"></span></label>
-        <select id="cType">
-          ${CARS.map(c => `<option value="${c.id}">${c.brand}</option>`).join("")}
-        </select>
-      </div>
-      <div class="field field-search">
-        <button class="search-btn" id="searchBtn" type="button" aria-label="search">${ICONS.search}</button>
-      </div>`;
-  }
 
   function segs() {
     const items = [
       { id: "oneway", key: "trip.oneway" },
       { id: "round",  key: "trip.round" },
-      { id: "multi",  key: "trip.multi" },
     ];
     return items.map(s => `
       <label class="seg ${activeTrip === s.id ? "checked" : ""}" data-trip="${s.id}">
@@ -82,30 +58,25 @@
   }
 
   function renderBooking() {
-    const fieldsHtml = activeTab === "flights" ? fieldFlights() : fieldCars();
-    const fieldsCls = activeTab === "cars" ? 'data-layout="cars"' : "";
+    const fieldsHtml = fieldFlights();
+    const fieldsCls = "";
     document.getElementById("booking-slot").innerHTML = `
       <div class="booking">
         <div class="booking-top">
           <div class="tabs">
-            <button class="tab ${activeTab === "flights" ? "active" : ""}" data-tab="flights">
+            <button class="tab active" data-tab="flights">
               ${ICONS.plane}<span data-i18n="tab.flights"></span>
-            </button>
-            <button class="tab ${activeTab === "cars" ? "active" : ""}" data-tab="cars">
-              ${ICONS.car}<span data-i18n="tab.cars"></span>
             </button>
           </div>
           <a href="#" class="support-link">${ICONS.headset}<span data-i18n="nav.support"></span></a>
         </div>
 
-        <div class="seg-row" ${activeTab === "cars" ? 'style="display:none"' : ""}>
+        <div class="seg-row">
           ${segs()}
           <div class="class-select">
             <select id="fClass">
-              <option value="Coach" data-i18n-opt="class.coach"></option>
-              <option value="Premium" data-i18n-opt="class.premium"></option>
+              <option value="Economy" data-i18n-opt="class.economy"></option>
               <option value="Business" data-i18n-opt="class.business"></option>
-              <option value="First" data-i18n-opt="class.first"></option>
             </select>
           </div>
         </div>
@@ -113,10 +84,6 @@
         <div class="fields" ${fieldsCls}>${fieldsHtml}</div>
 
         <div class="booking-bottom">
-          <div class="fare-options">
-            <label class="seg checked" data-fare="regular"><span class="dot"></span><span data-i18n="fare.regular"></span></label>
-            <label class="seg" data-fare="student"><span class="dot"></span><span data-i18n="fare.student"></span></label>
-          </div>
           <div class="booking-links">
             <a href="bookings.html" class="underline">${ICONS.ticket}<span data-i18n="link.mybooking"></span></a>
             <a href="#">${ICONS.status}<span data-i18n="link.status"></span></a>
@@ -184,15 +151,7 @@
     const seg = e.target.closest("[data-trip]");
     if (seg) {
       activeTrip = seg.dataset.trip;
-      document.querySelectorAll("[data-trip]").forEach(s => s.classList.toggle("checked", s === seg));
-      const ret = document.getElementById("fReturn");
-      if (ret) ret.disabled = (activeTrip === "oneway");
-      return;
-    }
-
-    const fare = e.target.closest("[data-fare]");
-    if (fare) {
-      document.querySelectorAll("[data-fare]").forEach(s => s.classList.toggle("checked", s === fare));
+      renderBooking();
       return;
     }
 

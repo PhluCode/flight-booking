@@ -42,6 +42,7 @@ db.exec(`
     arrival_time           DATETIME NOT NULL,
     duration               INTEGER NOT NULL,
     price                  REAL NOT NULL,
+    cabin_class            TEXT NOT NULL DEFAULT 'economy',
     total_seats            INTEGER NOT NULL,
     status                 TEXT DEFAULT 'scheduled'
   );

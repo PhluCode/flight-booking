@@ -279,7 +279,6 @@ input, select, button, textarea { font: inherit; color: inherit; }
   border-radius: var(--radius-md);
   padding: 8px;
 }
-.fields[data-layout="cars"] { grid-template-columns: 1.4fr auto 1fr 1fr 1.2fr auto; }
 .field {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-sm);
   padding: 12px 14px; display: flex; flex-direction: column; gap: 2px; min-width: 0;
@@ -305,7 +304,7 @@ input, select, button, textarea { font: inherit; color: inherit; }
 .booking-links svg { width: 17px; height: 17px; }
 
 @media (max-width: 920px){
-  .fields, .fields[data-layout="cars"] { grid-template-columns: 1fr 1fr; }
+  .fields { grid-template-columns: 1fr 1fr; }
   .field-swap { grid-column: 1 / -1; transform: rotate(90deg); justify-self: center; }
   .field-search { grid-column: 1 / -1; }
   .search-btn { padding: 14px; }

@@ -11,8 +11,8 @@ export const getAirports = async (req, res) => {
 
 export const searchFlights = async (req, res) => {
   try {
-    const { origin, destination, date } = req.query
-    const flights = await flightsService.findFlights({ origin, destination, date })
+    const { origin, destination, date, cls } = req.query
+    const flights = await flightsService.findFlights({ origin, destination, date, cls })
     res.json(flights)
   } catch (err) {
     res.status(500).json({ message: err.message })

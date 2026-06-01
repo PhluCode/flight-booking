@@ -3,8 +3,11 @@ import jwt from 'jsonwebtoken'
 import db from '../db.js'
 
 export const register = async ({ full_name, email, password, phone }) => {
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-  if (existing) throw new Error('Email already in use')
+  const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
+  if (existingEmail) throw new Error('Email already in use')
+
+  const existingPhone = db.prepare('SELECT id FROM users WHERE phone = ?').get(phone)
+  if (existingPhone) throw new Error('Phone number already in use')
 
   const password_hash = await bcrypt.hash(password, 10)
   const { lastInsertRowid } = db.prepare(

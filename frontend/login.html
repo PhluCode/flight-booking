@@ -53,6 +53,12 @@
               <div class="field-error" data-err="email"></div>
             </div>
 
+            <div class="form-field" id="phoneField" style="display:none">
+              <label data-i18n="auth.phone"></label>
+              <input class="input" id="phone" type="tel" data-i18n-ph="auth.phone.ph" />
+              <div class="field-error" data-err="phone"></div>
+            </div>
+
             <div class="form-field">
               <label data-i18n="auth.password"></label>
               <div class="input-group">
@@ -76,21 +82,8 @@
               <a href="#" data-i18n="auth.forgot"></a>
             </div>
 
-            <div class="form-field" id="agreeRow" style="display:none">
-              <label style="display:flex;gap:9px;align-items:center;font-size:.88rem">
-                <input type="checkbox" id="agree" /> <span data-i18n="auth.agree"></span>
-              </label>
-              <div class="field-error" data-err="agree"></div>
-            </div>
-
             <button type="submit" class="btn btn-dark btn-block btn-lg" id="submitBtn" data-i18n="auth.login.btn"></button>
           </form>
-
-          <div class="divider"><span data-i18n="auth.or"></span></div>
-          <div class="social-row">
-            <button class="btn btn-light social-btn" id="googleBtn"></button>
-            <button class="btn btn-light social-btn" id="fbBtn"></button>
-          </div>
         </div>
       </section>
     </div>

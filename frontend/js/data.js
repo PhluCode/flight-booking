@@ -50,13 +50,7 @@ const DESTINATIONS = [
   { code: "SYD", price: 18900, tagline_en: "Harbour views & beaches",     tagline_th: "อ่าวสวยและชายหาด" },
 ];
 
-/* Car rental options (cars tab / future cars page) */
-const CARS = [
-  { id: "C-ECO", type_en: "Economy",  type_th: "ประหยัด",   seats: 4, price: 890,  brand: "Toyota Yaris" },
-  { id: "C-SUV", type_en: "SUV",      type_th: "เอสยูวี",   seats: 5, price: 1690, brand: "Honda CR-V" },
-  { id: "C-LUX", type_en: "Luxury",   type_th: "หรูหรา",    seats: 4, price: 3200, brand: "BMW 5 Series" },
-  { id: "C-VAN", type_en: "Van",      type_th: "รถตู้",     seats: 9, price: 2400, brand: "Toyota Commuter" },
-];
+
 
 /* Default booking history (seeded into localStorage on first run) */
 const SEED_BOOKINGS = [

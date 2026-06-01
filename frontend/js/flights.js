@@ -11,6 +11,7 @@
   const searchFrom = qp.get("from") || "";
   const searchTo   = qp.get("to")   || "";
   const searchDate = qp.get("date") || new Date().toISOString().slice(0, 10);
+  const searchClass = qp.get("cls") || "";
 
   // filter state (single source of truth)
   const state = {
@@ -22,6 +23,7 @@
     sort: "cheapest",
     to: searchTo,
     from: searchFrom,
+    cls: searchClass,
   };
 
   /* ---- helper: format ISO datetime to HH:MM ---- */
@@ -33,7 +35,7 @@
   let FLIGHTS = [];
   if (searchFrom && searchTo) {
     try {
-      const res = await apiFetch(`/api/flights?origin=${searchFrom}&destination=${searchTo}&date=${searchDate}`);
+      const res = await apiFetch(`/api/flights?origin=${searchFrom}&destination=${searchTo}&date=${searchDate}${searchClass ? `&cls=${encodeURIComponent(searchClass)}` : ''}`);
       const data = await res.json();
       FLIGHTS = data.map(f => ({
         id:       f.flight_number,
@@ -46,14 +48,17 @@
         duration: f.duration,
         stops:    0,
         price:    f.price,
-        cls:      "Economy",
+        cls:      f.cabin_class ? `${f.cabin_class.charAt(0).toUpperCase() + f.cabin_class.slice(1)}` : (searchClass ? `${searchClass.charAt(0).toUpperCase() + searchClass.slice(1)}` : "Economy"),
       }));
     } catch (e) { console.error("Failed to fetch flights:", e); }
   }
 
   /* ---- build airline filter checkboxes from data ---- */
+  const availableAirlines = new Set(FLIGHTS.map(f => f.airline));
   document.getElementById("airlineFilters").innerHTML = Object.values(AIRLINES).map(a =>
-    `<label class="check"><input type="checkbox" class="f-airline" value="${a.code}" /> ${a.name}</label>`
+    `<label class="check ${availableAirlines.has(a.code) ? '' : 'disabled'}">
+      <input type="checkbox" class="f-airline" value="${a.code}" ${availableAirlines.has(a.code) ? '' : 'disabled'} /> ${a.name}
+    </label>`
   ).join("");
 
   /* ---- localize sort options ---- */
@@ -79,6 +84,7 @@
       if (state.from && f.from !== state.from) return false;
 
       if (state.stops.size && !state.stops.has(String(f.stops))) return false;
+      if (state.cls && f.cls.toLowerCase() !== state.cls.toLowerCase()) return false;
       if (state.airlines.size && !state.airlines.has(f.airline)) return false;
       if (f.price > state.maxPrice) return false;
       if (state.times.size && !state.times.has(timeBucket(f.dep))) return false;

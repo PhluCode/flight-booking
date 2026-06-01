@@ -9,8 +9,6 @@
   document.getElementById("asideMark").innerHTML = ICONS.planeUp;
   document.getElementById("asidePlane").innerHTML = ART.jetSide;
   ["t1", "t2", "t3"].forEach(id => document.getElementById(id).innerHTML = ICONS.check);
-  document.getElementById("googleBtn").innerHTML = ICONS.google + " Google";
-  document.getElementById("fbBtn").innerHTML = ICONS.facebook + " Facebook";
   document.querySelectorAll(".toggle-pass").forEach(b => b.innerHTML = ICONS.eye);
 
   let mode = "login"; // login | register
@@ -21,8 +19,8 @@
       b.classList.toggle("active", b.dataset.mode === mode));
     const reg = mode === "register";
     document.getElementById("nameField").style.display = reg ? "" : "none";
+    document.getElementById("phoneField").style.display = reg ? "" : "none";
     document.getElementById("confirmField").style.display = reg ? "" : "none";
-    document.getElementById("agreeRow").style.display = reg ? "" : "none";
     document.getElementById("loginRow").style.display = reg ? "none" : "";
     document.getElementById("authTitle").setAttribute("data-i18n", reg ? "auth.register.title" : "auth.login.title");
     document.getElementById("authLede").setAttribute("data-i18n", reg ? "auth.register.lede" : "auth.login.lede");
@@ -52,6 +50,8 @@
     if (mode === "register") {
       const name = document.getElementById("name").value.trim();
       if (!name) { showError("name", "err.required"); ok = false; }
+      const phone = document.getElementById("phone").value.trim();
+      if (!phone) { showError("phone", "err.required"); ok = false; }
     }
     if (!email) { showError("email", "err.required"); ok = false; }
     else if (!emailRe.test(email)) { showError("email", "err.email"); ok = false; }
@@ -62,7 +62,6 @@
     if (mode === "register") {
       const confirm = document.getElementById("confirm").value;
       if (confirm !== pass) { showError("confirm", "err.match"); ok = false; }
-      if (!document.getElementById("agree").checked) { showError("agree", "err.agree"); ok = false; }
     }
     return ok;
   }
@@ -99,7 +98,8 @@
         if (!res.ok) throw new Error(data.message || "Login failed");
       } else {
         const full_name = document.getElementById("name").value.trim();
-        res  = await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify({ full_name, email, password }) });
+        const phone = document.getElementById("phone").value.trim();
+        res  = await apiFetch("/api/auth/register", { method: "POST", body: JSON.stringify({ full_name, email, password, phone }) });
         data = await res.json();
         if (!res.ok) throw new Error(data.message || "Registration failed");
       }
@@ -107,13 +107,13 @@
       toast(mode === "register" ? "toast.register" : "toast.login");
       setTimeout(() => location.href = "index.html", 800);
     } catch (err) {
-      showError("email", err.message);
+      if (err.message.includes("Phone number")) {
+        showError("phone", err.message);
+      } else {
+        showError("email", err.message);
+      }
     }
   });
-
-  // social mock (kept for UI, still mock)
-  document.getElementById("googleBtn").addEventListener("click", () => toast("toast.login"));
-  document.getElementById("fbBtn").addEventListener("click",     () => toast("toast.login"));
 
   setMode("login");
 })();
