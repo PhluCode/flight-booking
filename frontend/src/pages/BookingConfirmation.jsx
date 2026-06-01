@@ -12,12 +12,13 @@ function formatDate(iso) {
 export default function BookingConfirmation() {
   const { state } = useLocation()
   const navigate = useNavigate()
-  const { flight, passengers, selectedSeats, passengerForms } = state || {}
+  const { flight, passengers, selectedSeats, passengerForms, tripType, returnDate, isReturnLeg } = state || {}
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('credit_card')
 
   const totalPrice = (flight?.price ?? 0) * (passengers ?? 1)
+  const isRoundTrip = tripType === 'roundtrip'
 
   const handleConfirm = async () => {
     setLoading(true)
@@ -29,7 +30,15 @@ export default function BookingConfirmation() {
         payment_method: paymentMethod,
         total_price: totalPrice,
       })
-      navigate('/bookings')
+
+      // Round trip outbound confirmed → go select the return flight
+      if (isRoundTrip && !isReturnLeg) {
+        navigate(
+          `/flights?origin=${flight.destination_code}&destination=${flight.origin_code}&date=${returnDate}&passengers=${passengers}&tripType=roundtrip&leg=return`
+        )
+      } else {
+        navigate('/bookings')
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Booking failed. Please try again.')
     }
@@ -39,7 +48,12 @@ export default function BookingConfirmation() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-2xl mx-auto px-4 py-8">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Review & Confirm</h2>
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Review & Confirm</h2>
+        {isRoundTrip && (
+          <p className="text-sm text-blue-500 mb-6">
+            {isReturnLeg ? 'Step 2 of 2 — Return Flight' : 'Step 1 of 2 — Outbound Flight'}
+          </p>
+        )}
 
         {/* Flight summary */}
         <div className="bg-white rounded-xl shadow-sm p-5 mb-4">
@@ -110,7 +124,11 @@ export default function BookingConfirmation() {
           disabled={loading}
           className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold text-lg hover:bg-blue-700 disabled:opacity-50"
         >
-          {loading ? 'Confirming...' : 'Confirm & Pay'}
+          {loading
+            ? 'Confirming...'
+            : isRoundTrip && !isReturnLeg
+              ? 'Confirm Outbound & Select Return Flight →'
+              : 'Confirm & Pay'}
         </button>
       </div>
     </div>

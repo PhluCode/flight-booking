@@ -15,7 +15,6 @@ export default function Navbar({ session }) {
         <Link to="/" className="text-xl font-bold tracking-wide">&#9992; SkyBook</Link>
         {session && (
           <div className="flex items-center gap-6 text-sm">
-            <Link to="/"         className="hover:text-blue-200">Search</Link>
             <Link to="/bookings" className="hover:text-blue-200">My Bookings</Link>
             <button
               onClick={handleLogout}

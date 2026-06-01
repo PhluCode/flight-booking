@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 export default function PassengerDetails() {
   const { state } = useLocation()
   const navigate = useNavigate()
-  const { flight, passengers, selectedSeats } = state || {}
+  const { flight, passengers, selectedSeats, tripType, returnDate, isReturnLeg } = state || {}
 
   const [forms, setForms] = useState(
     Array.from({ length: passengers }, () => ({
@@ -17,7 +17,7 @@ export default function PassengerDetails() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    navigate('/confirm', { state: { flight, passengers, selectedSeats, passengerForms: forms } })
+    navigate('/confirm', { state: { flight, passengers, selectedSeats, passengerForms: forms, tripType, returnDate, isReturnLeg } })
   }
 
   return (

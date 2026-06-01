@@ -12,7 +12,7 @@ export default function SeatSelection() {
   const [seats, setSeats] = useState([])
   const [selected, setSelected] = useState([])
 
-  const { flight, passengers } = state || { passengers: 1 }
+  const { flight, passengers, tripType, returnDate, isReturnLeg } = state || { passengers: 1 }
 
   useEffect(() => {
     api.get(`/api/flights/${id}/seats`).then(res => setSeats(res.data))
@@ -107,7 +107,7 @@ export default function SeatSelection() {
             </span>
           </p>
           <button
-            onClick={() => navigate('/passengers', { state: { flight, passengers, selectedSeats: selected } })}
+            onClick={() => navigate('/passengers', { state: { flight, passengers, selectedSeats: selected, tripType, returnDate, isReturnLeg } })}
             disabled={selected.length !== passengers}
             className="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40"
           >
