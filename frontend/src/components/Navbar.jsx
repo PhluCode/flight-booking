@@ -1,11 +1,12 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { useAuth } from '../lib/AuthContext'
 
-export default function Navbar({ session }) {
+export default function Navbar() {
+  const { user, logout } = useAuth()
   const navigate = useNavigate()
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
+    logout()
     navigate('/login')
   }
 
@@ -13,8 +14,9 @@ export default function Navbar({ session }) {
     <nav className="bg-blue-600 text-white shadow-md">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <Link to="/" className="text-xl font-bold tracking-wide">&#9992; SkyBook</Link>
-        {session && (
+        {user && (
           <div className="flex items-center gap-6 text-sm">
+            <span className="text-blue-200">Hi, {user.full_name}</span>
             <Link to="/bookings" className="hover:text-blue-200">My Bookings</Link>
             <button
               onClick={handleLogout}

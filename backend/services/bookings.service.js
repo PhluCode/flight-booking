@@ -1,110 +1,75 @@
-import supabase from '../db.js'
+import db from '../db.js'
 
 function generateReference() {
   return Math.random().toString(36).substring(2, 10).toUpperCase()
 }
 
-export const createBooking = async ({ userId, flight_id, passengers, payment_method, total_price }) => {
-  // 1. Create booking
-  const { data: booking, error: bookingError } = await supabase
-    .from('bookings')
-    .insert({
-      user_id:           userId,
-      flight_id,
-      booking_reference: generateReference(),
-      status:            'confirmed',
-      total_price,
-    })
-    .select()
-    .single()
-  if (bookingError) throw bookingError
+export const createBooking = ({ userId, flight_id, passengers, payment_method, total_price }) => {
+  db.exec('BEGIN')
+  try {
+    const { lastInsertRowid: bookingId } = db.prepare(`
+      INSERT INTO bookings (user_id, flight_id, booking_reference, status, total_price)
+      VALUES (?, ?, ?, 'confirmed', ?)
+    `).run(userId, flight_id, generateReference(), total_price)
 
-  // 2. Insert passengers
-  const { error: passengerError } = await supabase
-    .from('passengers')
-    .insert(passengers.map(p => ({
-      booking_id:      booking.id,
-      first_name:      p.first_name,
-      last_name:       p.last_name,
-      passport_number: p.passport_number,
-      seat_number:     p.seat_number,
-    })))
-  if (passengerError) throw passengerError
+    for (const p of passengers) {
+      db.prepare(`
+        INSERT INTO passengers (booking_id, first_name, last_name, passport_number, seat_number)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(bookingId, p.first_name, p.last_name, p.passport_number ?? null, p.seat_number)
 
-  // 3. Mark seats as occupied
-  for (const p of passengers) {
-    await supabase
-      .from('seats')
-      .update({ status: 'occupied' })
-      .eq('flight_id', flight_id)
-      .eq('seat_number', p.seat_number)
+      db.prepare(`UPDATE seats SET status = 'occupied' WHERE flight_id = ? AND seat_number = ?`)
+        .run(flight_id, p.seat_number)
+    }
+
+    db.prepare(`
+      INSERT INTO payments (booking_id, amount, status, payment_method, paid_at)
+      VALUES (?, ?, 'paid', ?, datetime('now'))
+    `).run(bookingId, total_price, payment_method)
+
+    db.exec('COMMIT')
+    return db.prepare('SELECT * FROM bookings WHERE id = ?').get(bookingId)
+  } catch (err) {
+    db.exec('ROLLBACK')
+    throw err
   }
-
-  // 4. Record payment
-  const { error: paymentError } = await supabase
-    .from('payments')
-    .insert({
-      booking_id:     booking.id,
-      amount:         total_price,
-      status:         'paid',
-      payment_method,
-      paid_at:        new Date().toISOString(),
-    })
-  if (paymentError) throw paymentError
-
-  return booking
 }
 
-export const getBookingsByUser = async (userId) => {
-  const { data, error } = await supabase
-    .from('bookings')
-    .select(`
-      id, booking_reference, status, total_price, created_at,
-      flights (
-        flight_number, departure_time,
-        origin_airport:airports!flights_origin_airport_id_fkey ( code ),
-        destination_airport:airports!flights_destination_airport_id_fkey ( code )
-      )
-    `)
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false })
-  if (error) throw error
-
-  return data.map(b => ({
-    id:                b.id,
-    booking_reference: b.booking_reference,
-    status:            b.status,
-    total_price:       b.total_price,
-    created_at:        b.created_at,
-    flight_number:     b.flights.flight_number,
-    departure_time:    b.flights.departure_time,
-    origin_code:       b.flights.origin_airport.code,
-    destination_code:  b.flights.destination_airport.code,
-  }))
+export const getBookingsByUser = (userId) => {
+  return db.prepare(`
+    SELECT
+      b.id, b.booking_reference, b.status, b.total_price, b.created_at,
+      f.flight_number, f.departure_time,
+      o.code AS origin_code,
+      d.code AS destination_code
+    FROM bookings b
+    JOIN flights  f ON b.flight_id              = f.id
+    JOIN airports o ON f.origin_airport_id      = o.id
+    JOIN airports d ON f.destination_airport_id = d.id
+    WHERE b.user_id = ?
+    ORDER BY b.created_at DESC
+  `).all(userId)
 }
 
-export const cancelBooking = async (bookingId, userId) => {
-  // 1. Fetch booking + passenger seats to free them up
-  const { data: booking, error: fetchError } = await supabase
-    .from('bookings')
-    .select('flight_id, passengers ( seat_number )')
-    .eq('id', bookingId)
-    .eq('user_id', userId)
-    .single()
-  if (fetchError || !booking) throw new Error('Booking not found')
+export const cancelBooking = (bookingId, userId) => {
+  db.exec('BEGIN')
+  try {
+    const booking = db.prepare(
+      'SELECT id, flight_id FROM bookings WHERE id = ? AND user_id = ?'
+    ).get(bookingId, userId)
+    if (!booking) throw new Error('Booking not found')
 
-  // 2. Cancel booking
-  const { error: updateError } = await supabase
-    .from('bookings')
-    .update({ status: 'cancelled' })
-    .eq('id', bookingId)
-  if (updateError) throw updateError
+    db.prepare("UPDATE bookings SET status = 'cancelled' WHERE id = ?").run(bookingId)
 
-  // 3. Free the seats
-  const seatNumbers = booking.passengers.map(p => p.seat_number)
-  await supabase
-    .from('seats')
-    .update({ status: 'available' })
-    .eq('flight_id', booking.flight_id)
-    .in('seat_number', seatNumbers)
+    const passengers = db.prepare('SELECT seat_number FROM passengers WHERE booking_id = ?').all(bookingId)
+    for (const p of passengers) {
+      db.prepare("UPDATE seats SET status = 'available' WHERE flight_id = ? AND seat_number = ?")
+        .run(booking.flight_id, p.seat_number)
+    }
+
+    db.exec('COMMIT')
+  } catch (err) {
+    db.exec('ROLLBACK')
+    throw err
+  }
 }
