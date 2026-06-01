@@ -8,14 +8,22 @@
   const user = Auth.get();
   if (!user) { location.href = "login.html"; return; }
 
+  // saved profile details (persisted across sessions, used to auto-fill checkout)
+  const PROFILE_KEY = "aeris_profile";
+  let saved = {};
+  try { saved = JSON.parse(localStorage.getItem(PROFILE_KEY)) || {}; } catch {}
+
   // fill identity
   document.getElementById("pAvatar").textContent = Auth.initials(user);
   document.getElementById("pName").textContent = user.name;
   document.getElementById("pEmail").textContent = user.email;
   document.getElementById("pfEmail").value = user.email;
   const parts = user.name.split(/\s+/);
-  document.getElementById("firstName").value = parts[0] || "";
-  document.getElementById("lastName").value = parts.slice(1).join(" ") || "";
+  document.getElementById("firstName").value = saved.firstName || parts[0] || "";
+  document.getElementById("lastName").value  = saved.lastName  || parts.slice(1).join(" ") || "";
+  ["phone", "nationality", "passport", "dob", "address"].forEach(id => {
+    if (saved[id]) document.getElementById(id).value = saved[id];
+  });
 
   // icons
   document.getElementById("tierStar").innerHTML = ICONS.star;
@@ -28,7 +36,7 @@
     { key: "side.overview", ic: ICONS.grid,       href: "profile.html", active: true },
     { key: "side.personal", ic: ICONS.idCard,     href: "#" },
     { key: "side.bookings", ic: ICONS.ticket,     href: "bookings.html" },
-    { key: "side.payment",  ic: ICONS.card,       href: "#" },
+    { key: "side.payment",  ic: ICONS.card,       href: "payment.html" },
     { key: "side.settings", ic: ICONS.gear,       href: "#" },
   ];
   document.getElementById("sideNav").innerHTML = sideItems.map(i =>
@@ -58,9 +66,15 @@
 
   document.getElementById("profileForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    // update session name from edited fields
-    const name = (document.getElementById("firstName").value + " " + document.getElementById("lastName").value).trim();
-    Auth.set({ ...user, name });
+    // persist all detail fields so checkout can auto-fill them later
+    const profile = {};
+    ["firstName", "lastName", "phone", "nationality", "passport", "dob", "address"].forEach(id => {
+      profile[id] = document.getElementById(id).value.trim();
+    });
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+
+    // update the displayed name (do NOT touch the JWT token in Auth)
+    const name = `${profile.firstName} ${profile.lastName}`.trim() || user.name;
     setEditing(false);
     document.getElementById("pName").textContent = name;
     document.getElementById("pAvatar").textContent = Auth.initials({ name });

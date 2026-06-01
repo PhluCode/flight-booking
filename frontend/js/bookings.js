@@ -6,12 +6,8 @@
 
   if (!Auth.isLoggedIn()) { location.href = "login.html"; return; }
 
-  let activeFilter = "all";
+  let activeFilter = "upcoming";
   let allBookings  = [];
-
-  function fmtTime(iso) {
-    return new Date(iso).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
-  }
 
   async function loadBookings() {
     try {
@@ -21,18 +17,18 @@
         ref:      b.booking_reference,
         type:     "flight",
         status:   b.status,
-        airline:  b.flight_number ? b.flight_number.slice(0, 2) : "TG",
+        airline:  b.airline_code || (b.flight_number ? b.flight_number.slice(0, 2) : "TG"),
         flightNo: b.flight_number,
         from:     b.origin_code,
         to:       b.destination_code,
         date:     b.departure_time ? b.departure_time.slice(0, 10) : "",
-        dep:      b.departure_time ? fmtTime(b.departure_time) : "—",
-        arr:      "—",
-        duration: 0,
-        passengers: 1,
-        cls:      "Economy",
-        seat:     "—",
-        gate:     "—",
+        dep:      b.departure_time ? b.departure_time.slice(11, 16) : "—",
+        arr:      b.arrival_time ? b.arrival_time.slice(11, 16) : "—",
+        duration: b.duration || 0,
+        passengers: b.passenger_count || 1,
+        cls:      b.cabin_class || "Economy",
+        seat:     b.seat || "—",
+        gate:     b.gate || "—",
         total:    b.total_price,
         _id:      b.id,
       }));
@@ -49,10 +45,7 @@
 
   function render() {
     const lang = I18nStore.get();
-    const list = allBookings.filter(b => {
-      if (activeFilter === "all") return true;
-      return statusMap[b.status]?.group === activeFilter;
-    });
+    const list = allBookings.filter(b => statusMap[b.status]?.group === activeFilter);
 
     const wrap = document.getElementById("bookingList");
     if (!list.length) {
@@ -61,60 +54,55 @@
       return;
     }
 
+    // each booking → a route-titled group with one card (Agoda-style)
     wrap.innerHTML = list.map(b => {
       const st = statusMap[b.status] || statusMap.completed;
-      const isCar = b.type === "car";
-      const title = isCar ? (b.brand || "Car rental") : (AIRLINES[b.airline]?.name || b.airline);
-      const typeIc = isCar ? ICONS.car : ICONS.plane;
+      const airline = AIRLINES[b.airline]?.name || b.airline;
       const fromCity = cityName(b.from, lang);
-      const toCity = isCar ? fromCity : cityName(b.to, lang);
+      const toCity = cityName(b.to, lang);
       return `
-      <article class="booking-item">
-        <div class="bi-head">
-          <div class="bi-ref">
-            <span class="type-ic">${typeIc}</span>
-            <div>
-              <div class="code">${title} · ${b.flightNo || b.carType || ""}</div>
-              <div class="date">${t("bk.ref")}: ${b.ref} · ${fmtDate(b.date, lang)}</div>
+      <section class="bk-group">
+        <div class="bk-group-head">
+          <h3>${fromCity} - ${toCity}</h3>
+          <div class="date">${fmtDate(b.date, lang)}</div>
+        </div>
+        <article class="bk-card">
+          <div class="bk-card-top">
+            <span class="bk-id">${t("bk.ref")}: ${b.ref}</span>
+            <span class="status ${st.cls}">${t(st.key)}</span>
+          </div>
+          <div class="bk-card-body">
+            <div class="airline-logo">${ICONS.plane}</div>
+            <div class="bk-route">
+              <div class="bk-end">
+                <div class="city">${fromCity} <span class="muted">(${b.from})</span></div>
+                <div class="t">${b.dep}</div>
+              </div>
+              <div class="bk-arrow">
+                <div class="dur">${fmtDuration(b.duration, lang)}</div>
+                <div class="line"></div>
+                <div class="muted">${airline} · ${b.flightNo || ""}</div>
+              </div>
+              <div class="bk-end bk-end-r">
+                <div class="city">${toCity} <span class="muted">(${b.to})</span></div>
+                <div class="t">${b.arr}</div>
+              </div>
+            </div>
+            <div class="bk-meta">
+              <div><div class="k">${t("bk.class")}</div><div class="v">${b.cls}</div></div>
+              <div><div class="k">${t("bk.seat")}</div><div class="v">${b.seat}</div></div>
+              <div><div class="k">${t("bk.passengers")}</div><div class="v">${b.passengers}</div></div>
+              <div><div class="k">${t("bk.total")}</div><div class="v">${fmtBaht(b.total)}</div></div>
             </div>
           </div>
-          <span class="status ${st.cls}">${t(st.key)}</span>
-        </div>
-
-        <div class="bi-body">
-          <div class="bi-route">
-            <div class="bi-point">
-              <div class="city">${b.from}</div>
-              <div class="ap">${fromCity}</div>
-              <div class="t">${b.dep}</div>
-            </div>
-            ${isCar ? "" : `
-            <div class="bi-path">
-              <div class="dur">${fmtDuration(b.duration, lang)}</div>
-              <div class="track"></div>
-              <div class="dur">${b.from} – ${b.to}</div>
-            </div>
-            <div class="bi-point" style="text-align:right">
-              <div class="city">${b.to}</div>
-              <div class="ap">${toCity}</div>
-              <div class="t">${b.arr}</div>
-            </div>`}
+          <div class="bk-card-actions">
+            ${b.status === "cancelled"
+              ? `<a class="btn btn-dark" href="flights.html" data-i18n="bk.rebook"></a>`
+              : `<button class="btn btn-dark" data-ticket="${b._id}" data-i18n="bk.viewticket"></button>
+                 <button class="btn btn-light" data-cancel="${b._id}" data-i18n="bk.manage"></button>`}
           </div>
-          <div class="bi-meta">
-            <div><div class="k">${t("bk.passengers")}</div><div class="v">${b.passengers}</div></div>
-            <div><div class="k">${t("bk.class")}</div><div class="v">${b.cls}</div></div>
-            ${isCar ? "" : `<div><div class="k">${t("bk.seat")}</div><div class="v">${b.seat}</div></div>`}
-            <div><div class="k">${t("bk.total")}</div><div class="v">${fmtBaht(b.total)}</div></div>
-          </div>
-        </div>
-
-        <div class="bi-actions">
-          ${b.status === "cancelled"
-            ? `<button class="btn btn-dark" data-i18n="bk.rebook"></button>`
-            : `<button class="btn btn-dark" data-i18n="bk.viewticket"></button>
-               <button class="btn btn-light" data-i18n="bk.manage"></button>`}
-        </div>
-      </article>`;
+        </article>
+      </section>`;
     }).join("");
     applyI18n();
   }
@@ -128,11 +116,14 @@
     render();
   });
 
-  // cancel button handler
+  // view e-ticket + cancel handlers (event delegation)
   document.getElementById("bookingList").addEventListener("click", async (e) => {
+    const ticketBtn = e.target.closest("[data-ticket]");
+    if (ticketBtn) { location.href = "eticket.html?id=" + ticketBtn.dataset.ticket; return; }
+
     const btn = e.target.closest("[data-cancel]");
     if (!btn) return;
-    if (!confirm("Cancel this booking?")) return;
+    if (!confirm(t("bk.confirmcancel"))) return;
     const id = btn.dataset.cancel;
     await apiFetch(`/api/bookings/${id}`, { method: "DELETE" });
     await loadBookings();
