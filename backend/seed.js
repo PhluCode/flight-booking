@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs'
 import db from './db.js'
 
 // Clear existing data
@@ -6,6 +7,11 @@ db.exec(`
   DELETE FROM seats;     DELETE FROM flights;    DELETE FROM airlines;
   DELETE FROM airports;  DELETE FROM users;
 `)
+
+const passwordHash = bcrypt.hashSync('password123', 10)
+db.prepare(
+  'INSERT OR IGNORE INTO users (full_name, email, password_hash, phone) VALUES (?, ?, ?, ?)'
+).run('Demo User', 'user@example.com', passwordHash, '0123456789')
 
 // Airports
 db.prepare('INSERT INTO airports (code, name, city, country) VALUES (?,?,?,?)').run('BKK', 'Suvarnabhumi Airport',        'Bangkok',    'Thailand')
