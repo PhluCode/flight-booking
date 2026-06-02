@@ -26,22 +26,36 @@
   });
 
   // icons
-  document.getElementById("tierStar").innerHTML = ICONS.star;
   document.getElementById("ic1").innerHTML = ICONS.ticket;
-  document.getElementById("ic2").innerHTML = ICONS.globe;
-  document.getElementById("ic3").innerHTML = ICONS.plane;
+  document.getElementById("ic2").innerHTML = ICONS.plane;
 
-  // side nav
+  // side nav — sections (no href) switch in-page; links navigate away
   const sideItems = [
-    { key: "side.overview", ic: ICONS.grid,       href: "profile.html", active: true },
-    { key: "side.personal", ic: ICONS.idCard,     href: "#" },
-    { key: "side.bookings", ic: ICONS.ticket,     href: "bookings.html" },
-    { key: "side.payment",  ic: ICONS.card,       href: "payment.html" },
-    { key: "side.settings", ic: ICONS.gear,       href: "#" },
+    { key: "side.overview", ic: ICONS.grid,   section: "secOverview", active: true },
+    { key: "information",   ic: ICONS.user,   section: "secPersonal" },
+    { key: "side.bookings", ic: ICONS.ticket, href: "bookings.html" },
+    { key: "side.payment",  ic: ICONS.card,   section: "secPayment" },
   ];
+
   document.getElementById("sideNav").innerHTML = sideItems.map(i =>
-    `<li><a href="${i.href}" class="${i.active ? "active" : ""}">${i.ic}<span data-i18n="${i.key}"></span></a></li>`
+    `<li><a ${i.href ? `href="${i.href}"` : `href="#" data-section="${i.section}"`}
+        class="${i.active ? "active" : ""}">${i.ic}<span data-i18n="${i.key}"></span></a></li>`
   ).join("");
+
+  // section switching
+  const allSections = ["secOverview", "secPersonal", "secPayment"];
+  document.getElementById("sideNav").addEventListener("click", (e) => {
+    const link = e.target.closest("a[data-section]");
+    if (!link) return;
+    e.preventDefault();
+    const target = link.dataset.section;
+    allSections.forEach(id => {
+      document.getElementById(id).hidden = (id !== target);
+    });
+    document.querySelectorAll("#sideNav a").forEach(a =>
+      a.classList.toggle("active", a.dataset.section === target)
+    );
+  });
 
   function localizeSelects() {
     document.querySelectorAll("select option[data-i18n-opt]").forEach(o =>
@@ -80,6 +94,51 @@
     document.getElementById("pAvatar").textContent = Auth.initials({ name });
     toast("toast.saved");
   });
+
+  // fetch real booking stats from backend
+  apiFetch('/api/bookings')
+    .then(res => res.json())
+    .then(bookings => {
+      const now = new Date()
+      const totalTrips = bookings.length
+      const upcoming   = bookings.filter(b =>
+        b.status !== 'cancelled' && new Date(b.departure_time) > now
+      ).length
+
+      document.getElementById('tileTrips').textContent    = totalTrips
+      document.getElementById('tileUpcoming').textContent = upcoming
+    })
+    .catch(() => {
+      document.getElementById('tileTrips').textContent    = '—'
+      document.getElementById('tileUpcoming').textContent = '—'
+    })
+
+  // fetch personalized recommendations
+  apiFetch('/api/bookings/recommendations')
+    .then(res => res.json())
+    .then(recs => {
+      const wrap = document.getElementById('recList')
+      if (!recs.length) {
+        wrap.innerHTML = '<span class="muted">Book a flight to get personalised recommendations.</span>'
+        return
+      }
+      wrap.innerHTML = recs.map(r => `
+        <a href="flights.html?to=${r.destination_code}" style="
+          display:flex;flex-direction:column;gap:4px;padding:14px 18px;
+          background:var(--bg-soft,#f5f5f5);border-radius:12px;
+          text-decoration:none;color:inherit;min-width:130px;flex:1 1 130px">
+          <span style="font-size:1.3rem;font-weight:700">${r.destination_code}</span>
+          <span style="font-size:.85rem;font-weight:500">${r.destination_city}</span>
+          <span style="font-size:.75rem;color:#888">${r.destination_country}</span>
+          <span style="font-size:.75rem;color:#888;margin-top:2px">
+            &#9992; ${r.popularity} traveller${r.popularity > 1 ? 's' : ''}
+          </span>
+        </a>`).join('')
+    })
+    .catch(() => {
+      const wrap = document.getElementById('recList')
+      if (wrap) wrap.innerHTML = '<span class="muted">Could not load recommendations.</span>'
+    })
 
   localizeSelects();
   applyI18n();

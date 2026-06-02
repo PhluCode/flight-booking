@@ -38,3 +38,12 @@ export const cancelBooking = (req, res) => {
     res.status(err.status || 500).json({ message: err.message })
   }
 }
+
+export const getRecommendations = (req, res) => {
+  try {
+    const recs = bookingsService.getRecommendations(req.user.id)
+    res.json(recs)
+  } catch (err) {
+    res.status(err.status || 500).json({ message: err.message })
+  }
+}

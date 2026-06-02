@@ -16,7 +16,6 @@ const FLIGHT_SELECT = `
     f.gate,
     f.status,
     f.total_seats,
-    f.cabin_class,
     al.code  AS airline_code,
     al.name  AS airline_name,
     o.code   AS origin_code,

@@ -153,3 +153,48 @@ export const cancelBooking = (bookingId, userId) => {
     throw err
   }
 }
+
+export const getRecommendations = (userId) => {
+  return db.prepare(`SELECT
+  dest.code        AS destination_code,
+  dest.city        AS destination_city,
+  dest.country     AS destination_country,
+  COUNT(*)         AS popularity          -- how many similar users flew there
+FROM bookings b
+JOIN flights  f    ON b.flight_id              = f.id
+JOIN airports dest ON f.destination_airport_id = dest.id
+WHERE b.user_id IN (
+
+    -- STEP 2: find users who share at least one destination with me
+    SELECT DISTINCT b2.user_id
+    FROM bookings b2
+    JOIN flights  f2  ON b2.flight_id              = f2.id
+    JOIN airports d2  ON f2.destination_airport_id = d2.id
+    WHERE d2.code IN (
+
+        -- STEP 1: my own booked destinations
+        SELECT a.code
+        FROM bookings b3
+        JOIN flights  f3 ON b3.flight_id              = f3.id
+        JOIN airports a  ON f3.destination_airport_id = a.id
+        WHERE b3.user_id = ?          -- current user
+    )
+    AND b2.user_id != ?               -- exclude myself
+
+)
+AND b.user_id != ?                    -- exclude myself
+
+-- STEP 3: exclude places I've already been
+AND dest.code NOT IN (
+    SELECT a2.code
+    FROM bookings b4
+    JOIN flights  f4 ON b4.flight_id              = f4.id
+    JOIN airports a2 ON f4.destination_airport_id = a2.id
+    WHERE b4.user_id = ?
+)
+
+GROUP BY dest.code, dest.city, dest.country
+ORDER BY popularity DESC
+LIMIT 5
+`).all(userId, userId, userId, userId)
+}

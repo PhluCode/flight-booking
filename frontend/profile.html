@@ -25,67 +25,84 @@
           <div class="profile-avatar" id="pAvatar">U</div>
           <h3 id="pName">—</h3>
           <div class="muted" id="pEmail" style="font-size:.85rem">—</div>
-          <span class="tier"><span id="tierStar"></span> <span data-i18n="profile.tier"></span></span>
         </div>
         <ul class="side-nav" id="sideNav"></ul>
-        <div class="miles-card">
-          <div class="lbl" data-i18n="miles.label"></div>
-          <div class="num">48,250</div>
-          <div class="miles-bar"><span style="width:72%"></span></div>
-          <div class="lbl" data-i18n="miles.next"></div>
-        </div>
       </aside>
 
       <!-- MAIN -->
       <section>
-        <div class="panel">
-          <div class="info-tiles">
-            <div class="info-tile"><div class="ic" id="ic1"></div><div class="num">12</div><div class="lbl" data-i18n="tile.trips"></div></div>
-            <div class="info-tile"><div class="ic" id="ic2"></div><div class="num">7</div><div class="lbl" data-i18n="tile.countries"></div></div>
-            <div class="info-tile"><div class="ic" id="ic3"></div><div class="num">2</div><div class="lbl" data-i18n="tile.upcoming"></div></div>
+
+        <!-- ── Overview ── -->
+        <div id="secOverview">
+          <div class="panel">
+            <div class="info-tiles">
+              <div class="info-tile"><div class="ic" id="ic1"></div><div class="num" id="tileTrips">—</div><div class="lbl" data-i18n="tile.trips"></div></div>
+              <div class="info-tile"><div class="ic" id="ic2"></div><div class="num" id="tileUpcoming">—</div><div class="lbl" data-i18n="tile.upcoming"></div></div>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-head">
+              <h2>Recommended for You</h2>
+              <span class="muted" style="font-size:.85rem">Based on similar travellers</span>
+            </div>
+            <div id="recList" style="display:flex;gap:12px;flex-wrap:wrap;padding-top:4px">
+              <span class="muted">Loading...</span>
+            </div>
           </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head">
-            <h2 data-i18n="panel.personal"></h2>
-            <button class="btn btn-light" id="editBtn" data-i18n="panel.edit"></button>
-          </div>
-          <form id="profileForm">
-            <div class="grid-2">
-              <div class="form-field"><label data-i18n="f.firstname"></label><input class="input" id="firstName" value="Somchai" disabled /></div>
-              <div class="form-field"><label data-i18n="f.lastname"></label><input class="input" id="lastName" value="Jaidee" disabled /></div>
-              <div class="form-field"><label data-i18n="f.email"></label><input class="input" id="pfEmail" disabled /></div>
-              <div class="form-field"><label data-i18n="f.phone"></label><input class="input" id="phone" value="+66 81 234 5678" disabled /></div>
-              <div class="form-field"><label data-i18n="f.nationality"></label><input class="input" id="nationality" value="Thai" disabled /></div>
-              <div class="form-field"><label data-i18n="f.passport"></label><input class="input" id="passport" value="AB1234567" disabled /></div>
-              <div class="form-field"><label data-i18n="f.dob"></label><input class="input" id="dob" type="date" value="1998-05-14" disabled /></div>
-              <div class="form-field"><label data-i18n="f.address"></label><input class="input" id="address" value="Chiang Mai, Thailand" disabled /></div>
+        <!-- ── Personal Information ── -->
+        <div id="secPersonal" hidden>
+          <div class="panel">
+            <div class="panel-head">
+              <h2 data-i18n="panel.personal"></h2>
+              <button class="btn btn-light" id="editBtn" data-i18n="panel.edit"></button>
             </div>
-            <button type="submit" class="btn btn-dark" id="saveBtn" style="display:none;margin-top:8px" data-i18n="panel.save"></button>
-          </form>
+            <form id="profileForm">
+              <div class="grid-2">
+                <div class="form-field"><label data-i18n="f.firstname"></label><input class="input" id="firstName" value="Somchai" disabled /></div>
+                <div class="form-field"><label data-i18n="f.lastname"></label><input class="input" id="lastName" value="Jaidee" disabled /></div>
+                <div class="form-field"><label data-i18n="f.email"></label><input class="input" id="pfEmail" disabled /></div>
+                <div class="form-field"><label data-i18n="f.phone"></label><input class="input" id="phone" value="+66 81 234 5678" disabled /></div>
+                <div class="form-field"><label data-i18n="f.nationality"></label><input class="input" id="nationality" value="Thai" disabled /></div>
+                <div class="form-field"><label data-i18n="f.passport"></label><input class="input" id="passport" value="AB1234567" disabled /></div>
+                <div class="form-field"><label data-i18n="f.dob"></label><input class="input" id="dob" type="date" value="1998-05-14" disabled /></div>
+                <div class="form-field"><label data-i18n="f.address"></label><input class="input" id="address" value="Chiang Mai, Thailand" disabled /></div>
+              </div>
+              <button type="submit" class="btn btn-dark" id="saveBtn" style="display:none;margin-top:8px" data-i18n="panel.save"></button>
+            </form>
+          </div>
         </div>
 
-        <div class="panel">
-          <div class="panel-head"><h2 data-i18n="panel.prefs"></h2></div>
-          <div class="grid-2">
-            <div class="form-field">
-              <label data-i18n="pref.seat"></label>
-              <select class="input" id="seatPref">
-                <option value="window" data-i18n-opt="seat.window"></option>
-                <option value="aisle" data-i18n-opt="seat.aisle"></option>
-              </select>
+        <!-- ── Payment ── -->
+        <div id="secPayment" hidden>
+          <div class="panel">
+            <div class="panel-head">
+              <h2 data-i18n="side.payment"></h2>
             </div>
-            <div class="form-field">
-              <label data-i18n="pref.meal"></label>
-              <select class="input" id="mealPref">
-                <option value="standard" data-i18n-opt="meal.standard"></option>
-                <option value="veg" data-i18n-opt="meal.veg"></option>
-                <option value="halal" data-i18n-opt="meal.halal"></option>
-              </select>
+            <div class="grid-2" style="margin-top:8px">
+              <div class="form-field">
+                <label>Card Number</label>
+                <input class="input" placeholder="•••• •••• •••• ••••" />
+              </div>
+              <div class="form-field">
+                <label>Cardholder Name</label>
+                <input class="input" placeholder="Name on card" />
+              </div>
+              <div class="form-field">
+                <label>Expiry Date</label>
+                <input class="input" placeholder="MM / YY" />
+              </div>
+              <div class="form-field">
+                <label>CVV</label>
+                <input class="input" placeholder="•••" type="password" />
+              </div>
             </div>
+            <button class="btn btn-dark" style="margin-top:12px">Save Card</button>
           </div>
         </div>
+
       </section>
     </div>
   </main>
