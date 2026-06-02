@@ -19,7 +19,14 @@ const I18N = {
 
     /* hero */
     "hero.title": "WHERE TO FLY?",
+    "hero.welcome": "Welcome on board",
+    "hero.eyebrow": "AERIS — Premium Air Travel",
     "hero.sub": "Find countless flight options & deals to various destinations around the world.",
+    "hero.q.pax": "1 adult",
+    "hero.q.trip": "One way",
+    "hero.q.class": "Economy",
+    "hero.cap.fleet": "AERIS Signature Fleet",
+    "hero.cap.tag": "Private jets & charters",
     "hero.promo.tag": "Elevate Your Journey With Us",
     "hero.cta": "Start Booking Your Flight Now",
 
@@ -51,7 +58,7 @@ const I18N = {
     /* destinations */
     "dest.title": "Popular Destinations",
     "dest.sub": "Hand-picked routes our travelers love this season.",
-    "dest.from": "from",
+    "dest.from": "Start at",
     "dest.viewall": "View all destinations",
 
     /* why us */
@@ -71,6 +78,13 @@ const I18N = {
     "results.sub": "flights found",
     "results.searchph": "Search airline, city or flight no.",
     "results.sort": "Sort by",
+    "picker.title": "Plan Your Trip",
+    "picker.eyebrow": "Where to next?",
+    "picker.head": "Where would you like to fly?",
+    "picker.sub": "Choose your route and date to see live flights.",
+    "picker.choose": "Select airport",
+    "picker.search": "Search flights",
+    "picker.popular": "Popular destinations",
     "sort.cheapest": "Cheapest",
     "sort.fastest": "Fastest",
     "sort.earliest": "Earliest departure",
@@ -306,7 +320,14 @@ const I18N = {
     "nav.back": "ย้อนกลับ",
 
     "hero.title": "จะบินไปไหนดี?",
+    "hero.welcome": "ยินดีต้อนรับสู่การเดินทาง",
+    "hero.eyebrow": "AERIS — การเดินทางทางอากาศระดับพรีเมียม",
     "hero.sub": "ค้นหาเที่ยวบินและดีลสุดคุ้มสู่จุดหมายปลายทางมากมายทั่วโลก",
+    "hero.q.pax": "ผู้ใหญ่ 1 คน",
+    "hero.q.trip": "เที่ยวเดียว",
+    "hero.q.class": "ชั้นประหยัด",
+    "hero.cap.fleet": "ฝูงบินซิกเนเจอร์ AERIS",
+    "hero.cap.tag": "เครื่องบินส่วนตัวและเช่าเหมาลำ",
     "hero.promo.tag": "ยกระดับการเดินทางไปกับเรา",
     "hero.cta": "เริ่มจองเที่ยวบินของคุณเลย",
 
@@ -358,6 +379,13 @@ const I18N = {
     "results.sub": "เที่ยวบินที่พบ",
     "results.searchph": "ค้นหาสายการบิน เมือง หรือเลขเที่ยวบิน",
     "results.sort": "เรียงตาม",
+    "picker.title": "วางแผนการเดินทาง",
+    "picker.eyebrow": "ไปไหนต่อดี?",
+    "picker.head": "อยากบินไปที่ไหน?",
+    "picker.sub": "เลือกเส้นทางและวันที่ เพื่อดูเที่ยวบินที่ว่าง",
+    "picker.choose": "เลือกสนามบิน",
+    "picker.search": "ค้นหาเที่ยวบิน",
+    "picker.popular": "จุดหมายยอดนิยม",
     "sort.cheapest": "ราคาถูกสุด",
     "sort.fastest": "เร็วที่สุด",
     "sort.earliest": "ออกเดินทางเช้าสุด",

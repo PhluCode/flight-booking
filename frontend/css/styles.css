@@ -19,6 +19,15 @@
   --pill-2:    #dededf;
   --white:     #ffffff;
 
+  /* sky accent — used sparingly over the monochrome base */
+  --sky:       #4f93cf;
+  --sky-deep:  #2f6fa8;
+  --sky-soft:  #dcebf8;
+  --sky-50:    #eff6fc;
+  --sky-100:   #d8e9f7;
+  --sky-200:   #bcd9f0;
+  --sky-ring:  rgba(79,147,207,.30);
+
   --radius-pill: 999px;
   --radius-lg:   28px;
   --radius-md:   18px;
@@ -264,10 +273,22 @@ input, select, button, textarea { font: inherit; color: inherit; }
 
 .class-select { position: relative; }
 .class-select select {
-  appearance: none; border: 1px solid var(--line-2); background: var(--surface);
-  padding: 9px 38px 9px 16px; border-radius: var(--radius-pill); font-weight: 600;
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--line-2); background-color: var(--surface);
+  padding: 10px 40px 10px 40px; border-radius: var(--radius-pill);
+  font-weight: 700; font-size: .9rem; color: var(--ink); cursor: pointer;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230a0a0b' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='3' y='7' width='18' height='13' rx='2'/%3E%3Cpath d='M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 15px center, left 15px center;
+  background-size: 11px, 15px;
+  transition: border-color .2s, box-shadow .2s, background-color .2s, transform .08s;
 }
-.class-select::after { content: "▾"; position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.class-select select:hover { border-color: var(--ink); background-color: var(--bg-soft); }
+.class-select select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(9,9,11,.10); }
+.class-select select:active { transform: translateY(1px); }
+.class-select::after { display: none; }
 
 /* fields grid */
 .fields {
@@ -330,8 +351,9 @@ input, select, button, textarea { font: inherit; color: inherit; }
   transition: transform .25s ease, box-shadow .25s;
 }
 .dest-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
-.dest-media { aspect-ratio: 4/3; display: grid; place-items: center; background: linear-gradient(160deg,#e9e9ee,#d6d6dc); }
+.dest-media { aspect-ratio: 4/3; display: grid; place-items: center; background: linear-gradient(160deg,#e9e9ee,#d6d6dc); overflow: hidden; }
 .dest-media svg { width: 55%; opacity: .8; }
+.dest-media img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .dest-body { padding: 18px; display: flex; justify-content: space-between; align-items: flex-end; }
 .dest-body h3 { margin: 0; font-size: 1.05rem; }
 .dest-body .sub { color: var(--muted); font-size: .85rem; }
@@ -363,7 +385,32 @@ input[type="range"] { width: 100%; accent-color: var(--ink); }
 .search-input { position: relative; flex: 1; min-width: 220px; }
 .search-input svg { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); width: 18px; height: 18px; color: var(--muted); }
 .search-input input { width: 100%; padding: 13px 16px 13px 44px; border-radius: var(--radius-pill); border: 1px solid var(--line-2); background: var(--surface); }
-.sort-select { appearance: none; border: 1px solid var(--line-2); background: var(--surface); padding: 13px 40px 13px 18px; border-radius: var(--radius-pill); font-weight: 600; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 16px center; }
+.sort-select {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--line-2); background-color: var(--surface);
+  padding: 13px 42px 13px 44px; border-radius: var(--radius-pill);
+  font-weight: 700; color: var(--ink); cursor: pointer;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%230a0a0b' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6h16M4 12h10M4 18h6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat, no-repeat;
+  background-position: right 16px center, left 16px center;
+  background-size: 12px, 16px;
+  transition: border-color .2s, box-shadow .2s, background-color .2s;
+}
+.sort-select:hover { border-color: var(--ink); background-color: var(--bg-soft); }
+.sort-select:focus { outline: none; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(9,9,11,.10); }
+
+/* cabin-class toggle on the results header */
+.cls-toggle { display: inline-flex; background: var(--pill); padding: 4px; border-radius: var(--radius-pill); gap: 2px; }
+.cls-toggle button {
+  border: 0; background: transparent; color: var(--muted);
+  padding: 10px 18px; border-radius: var(--radius-pill);
+  font-weight: 700; font-size: .88rem; cursor: pointer;
+  transition: background .2s, color .2s, box-shadow .2s;
+}
+.cls-toggle button:hover { color: var(--ink); }
+.cls-toggle button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); }
 
 .flight-card {
   background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg);
@@ -863,3 +910,408 @@ body:has(.rt-bar) { padding-bottom: 90px; }
 .seat-leg { margin-top: 8px; }
 .seat-leg + .seat-leg { margin-top: 22px; padding-top: 22px; border-top: 1px dashed var(--line-2); }
 .seat-leg-title { display: flex; align-items: center; gap: 10px; justify-content: center; margin: 0 0 12px; font-size: 1rem; }
+
+/* =========================================================
+   ★ HOMEPAGE REDESIGN v2 — "Welcome on board"
+   Floating panel + sky-window hero, editorial type, sky accent.
+   Overrides earlier .hero rules (later cascade wins).
+   ========================================================= */
+
+/* atmospheric page wash behind the hero panel */
+body { background:
+  radial-gradient(120% 60% at 50% -10%, var(--sky-50) 0%, transparent 60%),
+  var(--bg); }
+
+/* z-index 5 lifts the whole hero (incl. its date/airport pop-overs) above
+   later sections like Popular Destinations, so dropdowns are never covered */
+.hero { padding: 26px 0 8px; overflow: visible; position: relative; z-index: 5; }
+
+.hero-panel {
+  position: relative;
+  background:
+    radial-gradient(140% 90% at 50% 0%, #ffffff 0%, #fbfcfe 55%, #f7f9fb 100%);
+  border: 1px solid var(--line);
+  border-radius: clamp(22px, 3vw, 40px);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 40px 80px -40px rgba(20,52,82,.30),
+    0 12px 30px -22px rgba(9,9,11,.20);
+  padding: clamp(22px, 3.4vw, 48px) clamp(18px, 3.2vw, 54px) clamp(20px, 2.6vw, 34px);
+  overflow: visible;   /* let the date / airport pop-overs escape the panel */
+  animation: panel-in .8s cubic-bezier(.16,.84,.34,1) both;
+}
+/* keep the faint grid texture clipped to the panel's rounded corners */
+.hero-panel::before { border-radius: inherit; }
+/* faint guideline grid texture for that editorial feel */
+.hero-panel::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .5;
+  background:
+    linear-gradient(90deg, var(--line) 1px, transparent 1px) 0 0/ 100% 100%,
+    linear-gradient(var(--line) 1px, transparent 1px) 0 0/ 100% 100%;
+  -webkit-mask: radial-gradient(120% 80% at 50% 30%, #000 0%, transparent 72%);
+          mask: radial-gradient(120% 80% at 50% 30%, #000 0%, transparent 72%);
+  background-size: 46px 46px; opacity: .35;
+}
+.hero-panel > * { position: relative; z-index: 1; }
+
+.hero-panel-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.hero-brandline { display: flex; flex-direction: column; gap: 5px; }
+.hero-eyebrow {
+  display: inline-flex; align-items: center; gap: 9px;
+  text-transform: uppercase; letter-spacing: .16em; font-size: .8rem; font-weight: 800; color: var(--ink);
+}
+.hero-eyebrow .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sky); box-shadow: 0 0 0 4px var(--sky-ring); }
+.hero-subline { padding-left: 17px; font-size: .76rem; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); }
+
+.hero-quick { display: flex; gap: 8px; flex-wrap: wrap; }
+.hq-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  background: var(--surface); border: 1px solid var(--line-2);
+  padding: 7px 14px; border-radius: var(--radius-pill);
+  font-weight: 700; font-size: .8rem; color: var(--ink-soft);
+  transition: border-color .2s, color .2s, transform .2s;
+}
+.hq-chip:hover { border-color: var(--sky); color: var(--sky-deep); transform: translateY(-1px); }
+.hq-chip svg { width: 15px; height: 15px; }
+
+.hero-welcome {
+  text-align: center;
+  font-family: var(--ff-display);
+  font-weight: 800;
+  font-size: clamp(2.4rem, 7.2vw, 5.6rem);
+  line-height: .96; letter-spacing: -.045em;
+  margin: clamp(14px, 2.4vw, 30px) 0 8px;
+  background: linear-gradient(180deg, var(--ink) 30%, #2b3946 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+.hero-lede { text-align: center; color: var(--muted); max-width: none; margin: 0 auto; font-size: clamp(.95rem, 1.5vw, 1.08rem); }
+@media (min-width: 880px){ .hero-lede { white-space: nowrap; } }
+
+/* the oval "sky window" with the jet */
+.sky-window {
+  position: relative;
+  height: clamp(210px, 30vw, 350px);
+  margin: clamp(16px, 2.6vw, 34px) auto clamp(8px, 1.5vw, 18px);
+  display: grid; place-items: center;
+  max-width: 1000px;
+}
+.sky-oval {
+  position: absolute; inset: 6% 6%;
+  border-radius: 999px; overflow: hidden;
+  background:
+    linear-gradient(180deg, #bfe0f6 0%, #8ec2e8 42%, #5b9bd4 100%);
+  box-shadow:
+    inset 0 2px 10px rgba(255,255,255,.55),
+    inset 0 -30px 60px rgba(28,72,116,.30),
+    0 24px 50px -24px rgba(43,96,150,.55);
+}
+.cloud { position: absolute; background: #fff; border-radius: 999px; filter: blur(11px); opacity: .85; }
+.cloud-1 { width: 42%; height: 30%; left: -8%;  top: 14%;  opacity: .7;  animation: drift 26s linear infinite; }
+.cloud-2 { width: 34%; height: 26%; right: -6%; top: 48%;  opacity: .55; animation: drift 34s linear infinite reverse; }
+.cloud-3 { width: 26%; height: 20%; left: 30%;  bottom: -6%; opacity: .6; animation: drift 30s linear infinite; }
+
+.hero-plane {
+  position: relative; z-index: 2;
+  width: min(700px, 102%);
+  filter: drop-shadow(0 26px 26px rgba(20,52,82,.35));
+  animation: plane-float 6s ease-in-out infinite;
+}
+.hero-plane svg { width: 100%; height: auto; }
+/* the redesigned front-jet reads as a clean white craft against the sky */
+.hero-plane svg path[fill="#1a1a1d"] { fill: #f5f9fd; }
+.hero-plane svg circle[fill="#fff"] { fill: #2b3946; opacity: .55; }
+.hero-plane svg ellipse[fill="#000"] { fill: #1c4874; opacity: .14; }
+
+.hero-booking { margin-top: clamp(8px, 1.4vw, 18px); }
+
+/* booking widget sits flush inside the panel — lighter than standalone */
+.hero-booking .booking {
+  border-color: var(--line);
+  box-shadow: 0 18px 40px -28px rgba(20,52,82,.45);
+  background: linear-gradient(180deg, #ffffff, #fbfcfe);
+}
+
+/* search button — black to match the monochrome theme */
+.search-btn {
+  background: linear-gradient(180deg, #2b2b30 0%, var(--ink) 100%);
+  box-shadow: 0 8px 18px -8px rgba(9,9,11,.45);
+  transition: transform .15s ease, box-shadow .2s ease, filter .2s;
+}
+.search-btn:hover { filter: brightness(1.18); transform: translateY(-1px); box-shadow: 0 12px 22px -8px rgba(9,9,11,.45); }
+.search-btn:active { transform: translateY(0); }
+
+/* sky-tinted focus for inputs/fields across the app */
+.field.ap-field.active, .field.dp-field.active { border-color: var(--sky) !important; box-shadow: 0 0 0 1px var(--sky) !important; }
+.input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px var(--sky-ring); }
+.fld input:focus { border-color: var(--sky); box-shadow: 0 0 0 3px var(--sky-ring); }
+
+/* ---- staggered panel entrance ---- */
+.stagger { opacity: 0; animation: rise-in .7s cubic-bezier(.16,.84,.34,1) both; }
+.hero-panel-top.stagger { animation-delay: .12s; }
+.hero-welcome.stagger   { animation-delay: .20s; }
+.hero-lede.stagger      { animation-delay: .28s; }
+.sky-window.stagger     { animation-delay: .34s; }
+.hero-booking.stagger   { animation-delay: .44s; }
+
+@keyframes panel-in { from { opacity: 0; transform: translateY(26px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes rise-in  { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes plane-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+@keyframes drift { from { transform: translateX(0); } to { transform: translateX(40px); } }
+
+/* =========================================================
+   ★ CROSS-PAGE POLISH — motion + accent micro-interactions
+   ========================================================= */
+
+/* gentle page-in for main content on every page */
+main { animation: page-fade .5s ease both; }
+@keyframes page-fade { from { opacity: 0; } to { opacity: 1; } }
+
+/* buttons get a touch more life */
+.btn-dark:hover { transform: translateY(-1px); }
+.btn { transition: transform .15s ease, background .2s ease, box-shadow .2s ease, color .2s, border-color .2s; }
+
+/* flight result cards: accent rail + lift + staggered reveal */
+.flight-card { position: relative; overflow: hidden; }
+.flight-card::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: linear-gradient(180deg, var(--sky), var(--sky-deep));
+  transform: scaleY(0); transform-origin: top; transition: transform .25s ease;
+}
+.flight-card:hover { transform: translateY(-3px); box-shadow: var(--shadow-lg); }
+.flight-card:hover::before { transform: scaleY(1); }
+.flight-card .route .line::after { transition: right .3s ease; }
+.flight-card:hover .route .line::after { right: -6px; }
+
+/* destination cards: image zoom + accent price on hover */
+.dest-media { transition: transform .5s cubic-bezier(.2,.7,.2,1); }
+.dest-card:hover .dest-media { transform: scale(1.05); }
+.dest-card:hover .dest-price .amt { color: var(--sky-deep); transition: color .2s; }
+
+/* stat & info tiles: accent on hover */
+.stat { transition: transform .25s ease, box-shadow .25s ease, border-color .25s; }
+.stat:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--sky-200); }
+.info-tile { transition: transform .25s ease, box-shadow .25s ease, border-color .25s; }
+.info-tile:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--sky-200); }
+.info-tile:hover .ic { background: var(--sky-soft); color: var(--sky-deep); transition: background .2s, color .2s; }
+
+/* nav links: sky underline cue */
+.nav-link.active { background: var(--ink); }
+.nav-link:not(.active):hover { color: var(--sky-deep); }
+
+/* seat selection echoes the sky accent on hover (free seats) */
+.seat2-free:hover:not(:disabled):not(.seat2-taken) { border-color: var(--sky); box-shadow: 0 0 0 2px var(--sky-ring); }
+
+/* reveal items rise a touch more smoothly */
+.reveal { transition: opacity .6s ease, transform .6s cubic-bezier(.16,.84,.34,1); }
+
+/* Respect reduced-motion: kill ambient + entrance motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .stagger, .hero-panel { opacity: 1 !important; transform: none !important; }
+  .cloud, .hero-plane { animation: none !important; }
+}
+
+@media (max-width: 560px){
+  .hero-quick .hq-chip span:not(.dot) { font-size: .74rem; }
+  .sky-oval { inset: 10% 3%; }
+}
+
+/* =========================================================
+   ★ 3D SKY-STAGE HERO — white ghost jet breaks the blue pill
+   layers: ghost plane (back) ▸ blue pill w/ real photo (front)
+   ========================================================= */
+.sky-stage {
+  position: relative; z-index: 0;
+  display: grid; place-items: center;
+  height: clamp(250px, 31vw, 372px);
+  margin: clamp(16px, 2.6vw, 32px) 0 0;
+  overflow: visible;
+}
+
+/* the blue capsule holding the real jet photo (front layer) */
+.sky-pill {
+  position: relative; z-index: 2; margin: 0;
+  width: min(720px, 86%);
+  height: clamp(186px, 24vw, 282px);
+  border-radius: 999px; overflow: hidden; isolation: isolate;
+  background: linear-gradient(180deg, #bfe0f6 0%, #8ec2e8 45%, #5b9bd4 100%);
+  box-shadow:
+    inset 0 2px 12px rgba(255,255,255,.55),
+    0 30px 60px -28px rgba(20,52,82,.60),
+    0 8px 22px -16px rgba(9,9,11,.30);
+}
+.sky-pill img {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; object-position: 50% 42%;
+  transform: scale(1.05);
+  animation: kenburns 26s ease-in-out infinite alternate;
+}
+/* soft vignette so the jet stays crisp and the capsule edges round off */
+.sky-pill::after {
+  content: ""; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: radial-gradient(120% 130% at 50% 42%, transparent 52%, rgba(8,22,37,.30) 100%);
+}
+
+/* the white "ghost" jet behind — larger than the pill, so its nose,
+   wings and tail spill past the capsule for a 3-D pop */
+.sky-ghost {
+  position: absolute; left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(840px, 112%); z-index: 1; pointer-events: none;
+  filter: drop-shadow(0 26px 34px rgba(20,52,82,.16));
+  animation: plane-float 6.5s ease-in-out infinite;
+}
+.sky-ghost svg { width: 100%; height: auto; display: block; }
+.sky-ghost svg path[fill="#1a1a1d"] { fill: #ffffff; }
+.sky-ghost svg circle[fill="#fff"]  { fill: #c4d2dd; opacity: .9; }
+.sky-ghost svg ellipse[fill="#000"] { fill: #1c4874; opacity: .05; }
+
+/* film grain + sheen live inside the capsule */
+.hero-photo-grain {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none; opacity: .45;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/%3E%3C/svg%3E");
+}
+.hero-photo-sheen {
+  position: absolute; inset: -40% -60%; z-index: 1; pointer-events: none;
+  background: linear-gradient(70deg, transparent 38%, rgba(255,255,255,.30) 48%, rgba(255,255,255,.06) 54%, transparent 62%);
+  transform: translateX(-30%);
+  animation: sheen 9s ease-in-out infinite;
+  mix-blend-mode: screen;
+}
+
+/* booking widget sits just below the stage as frosted glass */
+.hero-booking {
+  position: relative; z-index: 3;
+  margin-top: clamp(14px, 2vw, 26px);
+  padding: 0 clamp(0px, 1vw, 14px);
+  scroll-margin-top: 96px;   /* land below the sticky nav when jumped to via #book */
+}
+.hero-booking .booking {
+  background: rgba(255,255,255,.80);
+  backdrop-filter: blur(22px) saturate(1.3); -webkit-backdrop-filter: blur(22px) saturate(1.3);
+  border: 1px solid rgba(255,255,255,.7);
+  box-shadow:
+    0 1px 0 rgba(255,255,255,.9) inset,
+    0 30px 60px -30px rgba(20,52,82,.50);
+}
+
+@keyframes kenburns { from { transform: scale(1.05) translate(0,0); } to { transform: scale(1.13) translate(-1.6%, -1.6%); } }
+@keyframes sheen { 0% { transform: translateX(-35%); } 55%,100% { transform: translateX(135%); } }
+
+@media (max-width: 640px){
+  .sky-stage { height: clamp(210px, 52vw, 300px); }
+  .sky-pill { width: 92%; }
+  .sky-ghost { width: 116%; }
+}
+@media (prefers-reduced-motion: reduce){
+  .sky-pill img, .hero-photo-sheen, .sky-ghost { animation: none !important; }
+  .sky-pill img { transform: scale(1.05); }
+}
+
+/* =========================================================
+   ★ FLIGHTS — route picker (shown when no route chosen yet)
+   ========================================================= */
+.route-picker {
+  display: grid; grid-template-columns: 1.05fr .95fr; gap: 24px; align-items: stretch;
+  margin: 8px 0 40px; animation: rise-in .6s cubic-bezier(.16,.84,.34,1) both;
+}
+@media (max-width: 860px){ .route-picker { grid-template-columns: 1fr; } }
+
+.rp-card {
+  background: linear-gradient(180deg, #ffffff, #fbfcfe);
+  border: 1px solid var(--line); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md); padding: clamp(22px, 3vw, 38px);
+  display: flex; flex-direction: column;
+}
+.rp-h { font-family: var(--ff-display); font-weight: 800; font-size: clamp(1.5rem, 3.2vw, 2.3rem); letter-spacing: -.025em; margin: 14px 0 6px; }
+.rp-sub { color: var(--muted); margin: 0 0 22px; }
+
+.rp-fields { display: grid; grid-template-columns: 1fr auto 1fr; gap: 12px 10px; align-items: end; }
+.rp-field { display: flex; flex-direction: column; gap: 7px; min-width: 0; }
+.rp-lbl { display: inline-flex; align-items: center; gap: 7px; font-size: .74rem; font-weight: 700; color: var(--muted); }
+.rp-lbl svg { width: 15px; height: 15px; }
+.rp-field select, #rpDate {
+  appearance: none; -webkit-appearance: none;
+  border: 1px solid var(--line-2); background: var(--surface);
+  padding: 13px 16px; border-radius: var(--radius-sm); font: inherit; font-weight: 600; color: var(--ink);
+  width: 100%; transition: border-color .2s, box-shadow .2s;
+}
+.rp-field select:focus, #rpDate:focus { outline: none; border-color: var(--sky); box-shadow: 0 0 0 3px var(--sky-ring); }
+.rp-field select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='3'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px; }
+.rp-swap { align-self: end; margin-bottom: 4px; transition: transform .25s ease, border-color .2s, color .2s; }
+.rp-swap:hover { transform: rotate(180deg); border-color: var(--sky); color: var(--sky-deep); }
+.rp-go { grid-column: 1 / -1; justify-content: center; padding: 14px; margin-top: 4px; }
+@media (max-width: 520px){ .rp-fields { grid-template-columns: 1fr; } .rp-swap { justify-self: center; transform: rotate(90deg); } .rp-swap:hover { transform: rotate(270deg); } }
+
+.rp-pop { margin-top: 22px; padding-top: 20px; border-top: 1px solid var(--line); }
+.rp-pop-lbl { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.rp-chips { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 12px; }
+.rp-chip {
+  border: 1px solid var(--line-2); background: var(--surface);
+  padding: 9px 15px; border-radius: var(--radius-pill);
+  font-weight: 700; font-size: .88rem; color: var(--ink-soft);
+  transition: border-color .2s, color .2s, transform .15s, box-shadow .2s;
+}
+.rp-chip .muted { font-weight: 600; }
+.rp-chip:hover { border-color: var(--sky); color: var(--sky-deep); transform: translateY(-2px); box-shadow: 0 8px 18px -12px var(--sky-ring); }
+
+.rp-photo {
+  position: relative; margin: 0; border-radius: var(--radius-lg); overflow: hidden;
+  min-height: 320px; isolation: isolate;
+  box-shadow: 0 30px 60px -34px rgba(20,52,82,.55);
+}
+.rp-photo img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 44%; transform: scale(1.05); animation: kenburns 26s ease-in-out infinite alternate; }
+.rp-photo::after { content: ""; position: absolute; inset: 0; z-index: 1; background: linear-gradient(120deg, rgba(8,22,37,.30), transparent 50%), radial-gradient(120% 120% at 50% 40%, transparent 55%, rgba(8,22,37,.28)); }
+@media (max-width: 860px){ .rp-photo { min-height: 220px; } }
+@media (prefers-reduced-motion: reduce){ .rp-photo img { animation: none; transform: scale(1.05); } }
+
+/* =========================================================
+   ★ Custom dropdown (csel) — class & sort, airport-picker style
+   ========================================================= */
+.csel { position: relative; display: inline-block; }
+.csel-trigger {
+  display: inline-flex; align-items: center; gap: 9px;
+  border: 1px solid var(--line-2); background: var(--surface);
+  padding: 11px 15px; border-radius: var(--radius-pill);
+  font: inherit; font-weight: 700; font-size: .9rem; color: var(--ink); cursor: pointer;
+  transition: border-color .2s, background .2s, box-shadow .2s;
+}
+.csel-trigger:hover { border-color: var(--ink); background: var(--bg-soft); }
+.csel.open .csel-trigger { border-color: var(--ink); box-shadow: 0 0 0 3px rgba(9,9,11,.10); }
+.csel-ico { display: inline-flex; color: var(--muted); }
+.csel-ico svg { width: 16px; height: 16px; }
+.csel-val { white-space: nowrap; }
+.csel-chev { display: inline-flex; margin-left: 1px; color: var(--muted); transition: transform .25s ease; }
+.csel-chev svg { width: 12px; height: 12px; }
+.csel.open .csel-chev { transform: rotate(180deg); }
+
+.csel-pop {
+  position: absolute; z-index: 50; top: calc(100% + 8px); left: 0;
+  min-width: max(100%, 180px);
+  background: var(--surface); border: 1px solid var(--line);
+  border-radius: var(--radius-md); box-shadow: var(--shadow-lg);
+  padding: 6px;
+  animation: csel-pop-in .16s ease both;
+}
+.csel-right .csel-pop { left: auto; right: 0; }
+@keyframes csel-pop-in { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+.csel-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 16px; width: 100%;
+  text-align: left; border: 0; background: transparent;
+  padding: 10px 12px; border-radius: var(--radius-sm); cursor: pointer;
+  font: inherit; font-weight: 600; font-size: .9rem; color: var(--ink);
+  transition: background .15s, color .15s;
+}
+.csel-item:hover { background: var(--bg-soft); }
+.csel-item.selected { background: var(--ink); color: #fff; }
+.csel-item svg { width: 15px; height: 15px; flex: none; }
+
+/* ---- Login: cinematic jet backdrop on the brand panel ---- */
+.auth-aside {
+  background:
+    linear-gradient(180deg, rgba(8,18,30,.74) 0%, rgba(8,18,30,.50) 38%, rgba(11,23,38,.86) 100%),
+    url("../assets/aeris-jet.jpg") center 30% / cover no-repeat, var(--ink);
+}
+.auth-aside .plane-deco { opacity: .14; }
+.auth-aside h2 { text-shadow: 0 2px 18px rgba(0,0,0,.45); }

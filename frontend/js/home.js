@@ -4,14 +4,26 @@
 (function () {
   mountShell("home");
 
-  // hero art
-  document.getElementById("heroPlane").innerHTML = ART.jetSide;
-  document.getElementById("promoImg").innerHTML = ART.jetFront;
-  document.getElementById("promoArt").innerHTML = ICONS.arrowUpRight;
+  // quick-glance chips in the panel top-right — mirror the booking widget
+  function updateHeroQuick() {
+    const hq = document.getElementById("heroQuick");
+    if (!hq) return;
+    const lang = I18nStore.get();
+    const pax = Math.max(1, parseInt(document.getElementById("fPax")?.value, 10) || 1);
+    const cls = fClassVal;
+    const paxTxt = lang === "th" ? `ผู้ใหญ่ ${pax} คน` : `${pax} ${pax > 1 ? "adults" : "adult"}`;
+    const tripTxt = t(activeTrip === "round" ? "trip.round" : "trip.oneway");
+    const clsTxt = t(cls === "Business" ? "class.business" : "class.economy");
+    hq.innerHTML =
+      `<span class="hq-chip">${ICONS.user}<span>${paxTxt}</span></span>` +
+      `<span class="hq-chip">${ICONS.plane}<span>${tripTxt}</span></span>` +
+      `<span class="hq-chip">${ICONS.briefcase}<span>${clsTxt}</span></span>`;
+  }
 
   /* ---------- widget state ---------- */
   let activeTab = "flights";   // flights | cars
   let activeTrip = "oneway";   // oneway | round | multi
+  let fClassVal = "Economy";   // Economy | Business — persisted across re-renders
 
   const MIN_DATE = "2026-06-01";
   const MAX_DATE = "2026-06-14";
@@ -142,7 +154,6 @@
         <div class="booking-bottom">
           <div class="booking-links">
             <a href="bookings.html" class="underline">${ICONS.ticket}<span data-i18n="link.mybooking"></span></a>
-            <a href="#">${ICONS.status}<span data-i18n="link.status"></span></a>
           </div>
         </div>
 
@@ -155,10 +166,13 @@
       o.textContent = t(o.getAttribute("data-i18n-opt"));
     });
     applyI18n();
+    const fcl = document.getElementById("fClass");
+    if (fcl) { fcl.value = fClassVal; enhanceSelect(fcl, { icon: ICONS.briefcase }); }
     syncAirportDisplays();
     syncDateDisplays();
     renderAirportPop();
     renderCalendar();
+    updateHeroQuick();
   }
 
   /* ---------- custom airport dropdown ---------- */
@@ -284,13 +298,65 @@
   }
 
   /* ---------- Destination cards ---------- */
+  // real photos in the assets folder, keyed by airport code (fallback = SVG art)
+  const DEST_IMG = {
+    HND: "assets/Tokyo(Haneda).jpg",
+    ICN: "assets/seoul.jpg",
+    CDG: "assets/paris.png",
+    SIN: "assets/Singapore.jpg",
+    DXB: "assets/Dubai.jpg",
+    SYD: "assets/Sydney.jpg",
+  };
+  // Origin airport derived from the saved profile (address / nationality →
+  // country). Falls back to BKK when the user's country has no airport here.
+  function homeOrigin() {
+    try {
+      const p = JSON.parse(localStorage.getItem("aeris_profile") || "null");
+      const hay = `${p?.address || ""} ${p?.nationality || ""}`.toLowerCase().trim();
+      if (hay) {
+        // match a country name that appears in the address (→ its primary airport)
+        for (const code of Object.keys(AIRPORTS)) {
+          if (hay.includes(AIRPORTS[code].country.toLowerCase())) return code;
+        }
+        // fall back to common demonyms / short names
+        const ALT = {
+          thai: "BKK", french: "CDG", japanese: "HND", korea: "ICN", korean: "ICN",
+          "hong kong": "HKG", taiwanese: "TPE", vietnamese: "SGN", dubai: "DXB",
+          uae: "DXB", emirati: "DXB", uk: "LHR", britain: "LHR", british: "LHR",
+          england: "LHR", australian: "SYD", malaysian: "KUL", singaporean: "SIN",
+        };
+        for (const k in ALT) if (hay.includes(k)) return ALT[k];
+      }
+    } catch { /* ignore malformed profile */ }
+    return "BKK";
+  }
+
+  // Replace the card price with the real cheapest fare for that route.
+  // Stays on the static fallback price when offline / opened as a file.
+  async function loadCheapest(origin, code, date, el) {
+    if (!el) return;
+    try {
+      const res = await apiFetch(`/api/flights?origin=${origin}&destination=${code}&date=${date}`);
+      const data = await res.json();
+      if (Array.isArray(data) && data.length) {
+        el.textContent = fmtBaht(Math.min(...data.map(f => f.price)));
+      }
+    } catch { /* keep fallback */ }
+  }
+
   function renderDestinations() {
     const lang = I18nStore.get();
+    const date = clamp(todayISO);
+    const baseOrigin = homeOrigin();
     document.getElementById("destGrid").innerHTML = DESTINATIONS.map(d => {
       const apt = AIRPORTS[d.code];
+      const origin = baseOrigin === d.code ? "BKK" : baseOrigin;   // never route a city to itself
+      const media = DEST_IMG[d.code]
+        ? `<img src="${DEST_IMG[d.code]}" alt="${cityName(d.code, lang)}, ${apt.country}" loading="lazy" />`
+        : ART.city;
       return `
-      <a href="flights.html?from=BKK&to=${d.code}&date=${clamp(todayISO)}" class="dest-card reveal">
-        <div class="dest-media">${ART.city}</div>
+      <a href="flights.html?from=${origin}&to=${d.code}&date=${date}" class="dest-card reveal" data-origin="${origin}" data-code="${d.code}">
+        <div class="dest-media">${media}</div>
         <div class="dest-body">
           <div>
             <h3>${cityName(d.code, lang)}</h3>
@@ -298,13 +364,15 @@
           </div>
           <div class="dest-price">
             <div class="from" data-i18n="dest.from"></div>
-            <div class="amt">${fmtBaht(d.price)}</div>
+            <div class="amt" data-price>${fmtBaht(d.price)}</div>
           </div>
         </div>
       </a>`;
     }).join("");
     applyI18n();
     document.querySelectorAll(".dest-card.reveal").forEach(el => el.classList.add("in"));
+    document.querySelectorAll(".dest-card").forEach(card =>
+      loadCheapest(card.dataset.origin, card.dataset.code, date, card.querySelector("[data-price]")));
   }
 
   /* ---------- Why-us tiles ---------- */
@@ -395,8 +463,7 @@
         params.set("to", sel.to);
         params.set("date", dp.depart || clamp(todayISO));
         if (dp.return) params.set("ret", dp.return);
-        const cls = document.getElementById("fClass")?.value;
-        if (cls) params.set("cls", cls);
+        if (fClassVal) params.set("cls", fClassVal);
         const pax = document.getElementById("fPax")?.value;
         if (pax) params.set("pax", pax);
       }
@@ -411,6 +478,12 @@
       const list = document.getElementById("apList");
       if (list) list.innerHTML = buildApList();
     }
+    if (e.target.id === "fPax") updateHeroQuick();
+  });
+
+  // class dropdown fires "change" — persist + keep hero chips in sync
+  document.getElementById("booking-slot").addEventListener("change", (e) => {
+    if (e.target.id === "fClass") { fClassVal = e.target.value; updateHeroQuick(); }
   });
 
   // close popovers when clicking outside the widget

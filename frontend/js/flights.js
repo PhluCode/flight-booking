@@ -7,9 +7,15 @@
 (async function () {
   mountShell("flights");
 
-  document.getElementById("searchIcon").innerHTML = ICONS.search;
-
   const qp = new URLSearchParams(location.search);
+
+  // This page only shows flights AFTER an origin/destination is chosen.
+  // If no route was selected yet, bounce back to the home booking widget
+  // so the user can pick airports there (replace → no empty entry in history).
+  const hasSearch = !!(qp.get("from") || qp.get("to"));
+  if (!hasSearch) { location.replace("index.html#book"); return; }
+
+  document.getElementById("searchIcon").innerHTML = ICONS.search;
   // if a destination is given without an origin (e.g. clicking a
   // popular-destination card), default the origin to BKK so results show.
   const searchFrom = qp.get("from") || (qp.get("to") ? "BKK" : "");
@@ -21,6 +27,8 @@
   const searchCls  = qp.get("cls") || "Economy";
 
   const PRICE_MAX = 50000;
+  const BIZ_PREMIUM = 1000;   // Business ≈ base + premium (mirrors checkout seat fee)
+  const priceOf = (f) => f.price + (state.cls === "Business" ? BIZ_PREMIUM : 0);
 
   function normCls(raw) {
     if (!raw) return "";
@@ -76,7 +84,6 @@
   function updateAirlineFilters() {
     const src = roundtrip && activeLeg === "ret" ? FLIGHTS_RET : FLIGHTS_OUT;
     const filtered = src.filter(f => {
-      if (state.cls && f.cls.toLowerCase() !== state.cls.toLowerCase()) return false;
       if (state.stops.size && !state.stops.has(String(f.stops))) return false;
       if (f.price > state.maxPrice) return false;
       if (state.times.size && !state.times.has(timeBucket(f.dep))) return false;
@@ -117,7 +124,6 @@
   function getResults(source) {
     let list = source.filter(f => {
       if (state.stops.size && !state.stops.has(String(f.stops))) return false;
-      if (state.cls && f.cls.toLowerCase() !== state.cls.toLowerCase()) return false;
       if (state.airlines.size && !state.airlines.has(f.airline)) return false;
       if (f.price > state.maxPrice) return false;
       if (state.times.size && !state.times.has(timeBucket(f.dep))) return false;
@@ -174,8 +180,10 @@
           </div>
         </div>
         <div class="flight-buy">
-          ${cheapest ? '<span class="badge badge-dark" data-i18n="sort.cheapest"></span>' : `<span class="badge">${f.cls}</span>`}
-          <div class="price">${fmtBaht(f.price)}</div>
+          ${cheapest
+            ? '<span class="badge badge-dark" data-i18n="sort.cheapest"></span>'
+            : `<span class="badge">${t(state.cls === "Business" ? "class.business" : "class.economy")}</span>`}
+          <div class="price">${fmtBaht(priceOf(f))}</div>
           <div class="per" data-i18n="flight.perpax"></div>
           ${action}
         </div>
@@ -250,7 +258,7 @@
     bar.hidden = false;
     const o = selOut ? flightById(selOut) : null;
     const r = selRet ? flightById(selRet) : null;
-    const total = (o ? o.price : 0) + (r ? r.price : 0);
+    const total = (o ? priceOf(o) : 0) + (r ? priceOf(r) : 0);
     const ready = o && r;
     bar.innerHTML = `
       <div class="container rt-bar-inner">
@@ -306,7 +314,7 @@
     }
     const book = e.target.closest(".book-btn");
     if (book) {
-      const params = new URLSearchParams({ flight: book.dataset.id, pax: String(searchPax), cls: searchCls });
+      const params = new URLSearchParams({ flight: book.dataset.id, pax: String(searchPax), cls: state.cls });
       location.href = "checkout.html?" + params.toString();
       return;
     }
@@ -330,7 +338,7 @@
     if (!Auth.isLoggedIn()) { location.href = "login.html"; return; }
     if (!selOut || !selRet) return;
     const params = new URLSearchParams({
-      flight: String(selOut), flight2: String(selRet), pax: String(searchPax), cls: searchCls,
+      flight: String(selOut), flight2: String(selRet), pax: String(searchPax), cls: state.cls,
     });
     location.href = "checkout.html?" + params.toString();
   });
@@ -347,7 +355,27 @@
 
   function toggleSet(set, val, on) { on ? set.add(val) : set.delete(val); }
 
+  /* ---- cabin class toggle (Economy ⇄ Business) ---- */
+  function syncClsToggle() {
+    document.querySelectorAll("#clsToggle button").forEach(b =>
+      b.classList.toggle("active", b.dataset.cls === state.cls));
+  }
+  document.getElementById("clsToggle").addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-cls]");
+    if (!btn || btn.dataset.cls === state.cls) return;
+    state.cls = btn.dataset.cls;
+    syncClsToggle();
+    render();
+  });
+
+  const SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg>';
+
   localizeSort();
+  syncClsToggle();
   render();
-  document.addEventListener("languagechange", () => { localizeSort(); render(); });
+  enhanceSelect(document.getElementById("sortBy"), { icon: SORT_ICON, align: "right" });
+  document.addEventListener("languagechange", () => {
+    localizeSort(); render();
+    document.getElementById("sortBy")?._refreshCsel?.();
+  });
 })();

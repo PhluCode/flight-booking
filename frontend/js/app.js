@@ -51,6 +51,75 @@ function toast(messageKey, opts = {}) {
   setTimeout(() => el.remove(), 3000);
 }
 
+/* ---------- Custom <select> → airport-style popover dropdown ----------
+   Keeps the underlying <select> (value + change events still work) but
+   renders a pill trigger + rounded option list like the airport picker. */
+function ensureCselGlobalClose() {
+  if (window.__cselGlobalClose) return;
+  window.__cselGlobalClose = true;
+  document.addEventListener("click", (e) => {
+    document.querySelectorAll(".csel.open").forEach(w => {
+      if (w.contains(e.target)) return;
+      w.classList.remove("open");
+      const p = w.querySelector(".csel-pop"); if (p) p.hidden = true;
+      w.querySelector(".csel-trigger")?.setAttribute("aria-expanded", "false");
+    });
+  });
+}
+function enhanceSelect(sel, opts = {}) {
+  if (!sel || sel.dataset.csel) return;
+  sel.dataset.csel = "1";
+  const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>';
+
+  const wrap = document.createElement("div");
+  wrap.className = "csel" + (opts.align === "right" ? " csel-right" : "");
+  const trigger = document.createElement("button");
+  trigger.type = "button";
+  trigger.className = "csel-trigger";
+  trigger.setAttribute("aria-haspopup", "listbox");
+  const pop = document.createElement("div");
+  pop.className = "csel-pop";
+  pop.hidden = true;
+
+  const renderTrigger = () => {
+    const cur = sel.options[sel.selectedIndex];
+    trigger.innerHTML =
+      (opts.icon ? `<span class="csel-ico">${opts.icon}</span>` : "") +
+      `<span class="csel-val">${cur ? cur.textContent : ""}</span>` +
+      `<span class="csel-chev">${CHEV}</span>`;
+  };
+  const renderList = () => {
+    pop.innerHTML = [...sel.options].map(o =>
+      `<button type="button" class="csel-item ${o.value === sel.value ? "selected" : ""}" data-val="${o.value}">
+         <span>${o.textContent}</span>${o.value === sel.value ? ICONS.check : ""}
+       </button>`).join("");
+  };
+  const open = () => { renderList(); pop.hidden = false; wrap.classList.add("open"); trigger.setAttribute("aria-expanded", "true"); };
+  const close = () => { pop.hidden = true; wrap.classList.remove("open"); trigger.setAttribute("aria-expanded", "false"); };
+
+  trigger.addEventListener("click", () => { pop.hidden ? open() : close(); });
+  pop.addEventListener("click", (e) => {
+    const it = e.target.closest("[data-val]");
+    if (!it) return;
+    if (sel.value !== it.dataset.val) {
+      sel.value = it.dataset.val;
+      sel.dispatchEvent(new Event("change", { bubbles: true }));
+    }
+    renderTrigger();
+    close();
+  });
+  ensureCselGlobalClose();   // one shared outside-click handler for all dropdowns
+
+  sel.parentNode.insertBefore(wrap, sel);
+  wrap.appendChild(trigger);
+  wrap.appendChild(pop);
+  wrap.appendChild(sel);
+  sel.style.display = "none";
+  sel.addEventListener("change", renderTrigger);
+  sel._refreshCsel = renderTrigger;    // call after re-localizing the options
+  renderTrigger();
+}
+
 /* ---------- Navbar + footer injection ---------- */
 function brandMark(extraClass = "") {
   return `<a href="index.html" class="brand ${extraClass}">
@@ -63,9 +132,8 @@ function buildNav(active) {
   const user = Auth.get();
   const links = [
     { key: "nav.home",     href: "index.html",    id: "home" },
-    { key: "nav.flights",  href: "flights.html",  id: "flights" },
+    { key: "nav.flights",  href: "index.html#book", id: "flights" },
     { key: "nav.bookings", href: "bookings.html", id: "bookings" },
-    { key: "nav.support",  href: "#",             id: "support" },
   ];
   const navLinks = links.map(l =>
     `<a class="nav-link ${active === l.id ? "active" : ""}" href="${l.href}" data-i18n="${l.key}"></a>`
