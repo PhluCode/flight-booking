@@ -45,6 +45,7 @@ db.exec(`
     stops                  INTEGER NOT NULL DEFAULT 0,
     gate                   TEXT,
     total_seats            INTEGER NOT NULL,
+    cabin_class            TEXT DEFAULT 'Economy',
     status                 TEXT DEFAULT 'scheduled'
   );
 
