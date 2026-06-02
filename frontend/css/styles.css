@@ -349,8 +349,13 @@ input, select, button, textarea { font: inherit; color: inherit; }
 .filter-group { padding: 16px 0; border-bottom: 1px solid var(--line); }
 .filter-group:last-child { border-bottom: 0; padding-bottom: 0; }
 .filter-group h4 { margin: 0 0 12px; font-size: .82rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
-.check { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: .92rem; font-weight: 500; cursor: pointer; }
+.check { display: flex; align-items: center; gap: 10px; padding: 6px 0; font-size: .92rem; font-weight: 500; cursor: pointer; transition: background .2s, color .2s; }
+.check.checked { background: var(--bg-soft); color: var(--ink); }
+.check.checked input { accent-color: var(--ink); }
 .check input { width: 17px; height: 17px; accent-color: var(--ink); }
+.check.disabled { opacity: .45; cursor: not-allowed; }
+.check.disabled input { cursor: not-allowed; }
+.check span { display: inline-block; }
 .range-val { display: flex; justify-content: space-between; font-size: .85rem; color: var(--muted); margin-top: 6px; }
 input[type="range"] { width: 100%; accent-color: var(--ink); }
 

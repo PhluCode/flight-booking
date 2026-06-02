@@ -125,6 +125,12 @@
 
         <div class="seg-row">
           ${segs()}
+          <div class="class-select">
+            <select id="fClass">
+              <option value="Economy" data-i18n-opt="class.economy"></option>
+              <option value="Business" data-i18n-opt="class.business"></option>
+            </select>
+          </div>
         </div>
 
         <div class="fields-wrap">
@@ -139,6 +145,7 @@
             <a href="#">${ICONS.status}<span data-i18n="link.status"></span></a>
           </div>
         </div>
+
       </div>
       <datalist id="airportList">
         ${Object.keys(AIRPORTS).map(c => `<option value="${c} — ${cityName(c, I18nStore.get())}"></option>`).join("")}

@@ -22,6 +22,16 @@
 
   const PRICE_MAX = 50000;
 
+  function normCls(raw) {
+    if (!raw) return "";
+    const s = String(raw).toLowerCase();
+    if (s.includes("biz") || s.includes("business")) return "Business";
+    if (s.includes("prem") || s.includes("premium")) return "Premium";
+    // coach / coaching / coach -> Economy
+    if (s.includes("coach") || s.includes("eco") || s.includes("econom")) return "Economy";
+    return raw.charAt(0).toUpperCase() + raw.slice(1);
+  }
+
   // filter state (single source of truth)
   const state = {
     keyword: "",
@@ -30,6 +40,7 @@
     maxPrice: PRICE_MAX,
     times: new Set(),
     sort: "cheapest",
+    cls: normCls(searchCls),
   };
 
   // round-trip selection (db ids) + which leg is being viewed
@@ -44,7 +55,8 @@
       from: f.origin_code, to: f.destination_code,
       dep: timeStr(f.departure_time), arr: timeStr(f.arrival_time),
       duration: f.duration, stops: f.stops, seatsLeft: f.seats_available,
-      price: f.price, cls: searchCls,
+      price: f.price,
+      cls: normCls(f.cls || f.class || f.cabin_class || searchCls),
     };
   }
 
@@ -61,13 +73,32 @@
   const FLIGHTS_OUT = await fetchLeg(searchFrom, searchTo, searchDate);
   const FLIGHTS_RET = roundtrip ? await fetchLeg(searchTo, searchFrom, searchRet) : [];
 
+  function updateAirlineFilters() {
+    const src = roundtrip && activeLeg === "ret" ? FLIGHTS_RET : FLIGHTS_OUT;
+    const filtered = src.filter(f => {
+      if (state.cls && f.cls.toLowerCase() !== state.cls.toLowerCase()) return false;
+      if (state.stops.size && !state.stops.has(String(f.stops))) return false;
+      if (f.price > state.maxPrice) return false;
+      if (state.times.size && !state.times.has(timeBucket(f.dep))) return false;
+      return true;
+    });
+    const availableAirlines = new Set(filtered.map(f => f.airline));
+    document.getElementById("airlineFilters").innerHTML = Object.values(AIRLINES).map(a => {
+      const isAvailable = availableAirlines.has(a.code);
+      const isChecked = state.airlines.has(a.code) && isAvailable;
+      if (!isAvailable && state.airlines.has(a.code)) {
+        state.airlines.delete(a.code);
+      }
+      return `
+      <label class="check ${isAvailable ? (isChecked ? 'checked' : '') : 'disabled'}">
+        <input type="checkbox" class="f-airline" value="${a.code}" ${isAvailable ? '' : 'disabled'} ${isChecked ? 'checked' : ''} />
+        <span>${a.name}</span>
+      </label>`;
+    }).join("");
+  }
+
   /* ---- build airline filter checkboxes from data ---- */
-  const availableAirlines = new Set([...FLIGHTS_OUT, ...FLIGHTS_RET].map(f => f.airline));
-  document.getElementById("airlineFilters").innerHTML = Object.values(AIRLINES).map(a =>
-    `<label class="check ${availableAirlines.has(a.code) ? '' : 'disabled'}">
-      <input type="checkbox" class="f-airline" value="${a.code}" ${availableAirlines.has(a.code) ? '' : 'disabled'} /> ${a.name}
-    </label>`
-  ).join("");
+  updateAirlineFilters();
 
   function localizeSort() {
     document.querySelectorAll("#sortBy option[data-i18n-opt]").forEach(o => {
@@ -186,6 +217,7 @@
 
   /* ---- render ---- */
   function render() {
+    updateAirlineFilters();
     const wrap = document.getElementById("flightList");
     if (roundtrip) {
       const src = activeLeg === "out" ? FLIGHTS_OUT : FLIGHTS_RET;
