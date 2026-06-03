@@ -21,7 +21,8 @@
   const parts = user.name.split(/\s+/);
   document.getElementById("firstName").value = saved.firstName || parts[0] || "";
   document.getElementById("lastName").value  = saved.lastName  || parts.slice(1).join(" ") || "";
-  ["phone", "nationality", "passport", "dob", "address"].forEach(id => {
+  document.getElementById("phone").value = saved.phone || user.phone || "";
+  ["nationality", "passport", "dob", "address"].forEach(id => {
     if (saved[id]) document.getElementById(id).value = saved[id];
   });
 
@@ -139,6 +140,51 @@
       const wrap = document.getElementById('recList')
       if (wrap) wrap.innerHTML = '<span class="muted">Could not load recommendations.</span>'
     })
+
+  // ── Payment section ──
+  // Uses the same key + field names as checkout.js so saved card auto-fills at checkout
+  const CARD_KEY = 'aeris_payment';
+
+  // load saved card on page open
+  const savedCard = (() => { try { return JSON.parse(localStorage.getItem(CARD_KEY)) || {} } catch { return {} } })();
+  if (savedCard.cardNumber) document.getElementById('cardNumber').value = savedCard.cardNumber;
+  if (savedCard.cardName)   document.getElementById('cardHolder').value = savedCard.cardName;
+  if (savedCard.exp)        document.getElementById('cardExp').value    = savedCard.exp;
+
+  // input formatting
+  const secPayment = document.getElementById('secPayment');
+  secPayment.addEventListener('input', (e) => {
+    if (e.target.id === 'cardNumber') {
+      const v = e.target.value.replace(/\D/g, '').slice(0, 16);
+      e.target.value = v.replace(/(.{4})/g, '$1 ').trim();
+    }
+    if (e.target.id === 'cardExp') {
+      const v = e.target.value.replace(/\D/g, '').slice(0, 4);
+      e.target.value = v.length > 2 ? v.slice(0, 2) + '/' + v.slice(2) : v;
+      const month = parseInt(v.slice(0, 2), 10);
+      const err = document.getElementById('cardExpErr');
+      const invalid = v.length >= 2 && (month < 1 || month > 12);
+      err.style.display = invalid ? '' : 'none';
+      e.target.style.borderColor = invalid ? '#e53e3e' : '';
+    }
+
+  });
+
+  // save card — stored with checkout.js field names so checkout auto-fills
+  document.getElementById('saveCardBtn').addEventListener('click', () => {
+    const cardNumber = document.getElementById('cardNumber').value.trim();
+    const cardName   = document.getElementById('cardHolder').value.trim();
+    const exp        = document.getElementById('cardExp').value.trim();
+    const month      = parseInt(exp.replace(/\D/g, '').slice(0, 2), 10);
+    if (!cardNumber || !cardName || !exp) return;
+    if (!month || month < 1 || month > 12) {
+      document.getElementById('cardExpErr').style.display = '';
+      document.getElementById('cardExp').style.borderColor = '#e53e3e';
+      return;
+    }
+    localStorage.setItem(CARD_KEY, JSON.stringify({ method: 'card', cardNumber, cardName, exp }));
+    toast('toast.saved');
+  });
 
   localizeSelects();
   applyI18n();

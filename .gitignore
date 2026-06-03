@@ -1,7 +1,6 @@
 node_modules/
 .env
 dist/
-.claude
 *.db
 *.db-shm
 *.db-wal

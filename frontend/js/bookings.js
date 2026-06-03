@@ -45,7 +45,14 @@
 
   function render() {
     const lang = I18nStore.get();
-    const list = allBookings.filter(b => statusMap[b.status]?.group === activeFilter);
+    let list = allBookings.filter(b => statusMap[b.status]?.group === activeFilter);
+
+    // sort upcoming by nearest departure date first
+    if (activeFilter === "upcoming") {
+      list = list.slice().sort((a, b) =>
+        new Date(a.date) - new Date(b.date)
+      );
+    }
 
     const wrap = document.getElementById("bookingList");
     if (!list.length) {

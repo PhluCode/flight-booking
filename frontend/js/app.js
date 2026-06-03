@@ -12,11 +12,15 @@ const Auth = {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       if (payload.exp * 1000 < Date.now()) { this.clear(); return null; }
-      return { name: payload.full_name, email: payload.email, tier: "Gold" };
+      return { name: payload.full_name, email: payload.email, phone: payload.phone, tier: "Gold" };
     } catch { return null; }
   },
   set(token) { localStorage.setItem(this.TOKEN_KEY, token); },
-  clear() { localStorage.removeItem(this.TOKEN_KEY); },
+  clear() {
+    localStorage.removeItem(this.TOKEN_KEY);
+    localStorage.removeItem("aeris_payment");
+    localStorage.removeItem("aeris_profile");
+  },
   isLoggedIn() { return !!this.get(); },
   getToken() { return localStorage.getItem(this.TOKEN_KEY); },
   initials(user) {

@@ -61,14 +61,14 @@
             </div>
             <form id="profileForm">
               <div class="grid-2">
-                <div class="form-field"><label data-i18n="f.firstname"></label><input class="input" id="firstName" value="Somchai" disabled /></div>
-                <div class="form-field"><label data-i18n="f.lastname"></label><input class="input" id="lastName" value="Jaidee" disabled /></div>
+                <div class="form-field"><label data-i18n="f.firstname"></label><input class="input" id="firstName" disabled /></div>
+                <div class="form-field"><label data-i18n="f.lastname"></label><input class="input" id="lastName" disabled /></div>
                 <div class="form-field"><label data-i18n="f.email"></label><input class="input" id="pfEmail" disabled /></div>
-                <div class="form-field"><label data-i18n="f.phone"></label><input class="input" id="phone" value="+66 81 234 5678" disabled /></div>
-                <div class="form-field"><label data-i18n="f.nationality"></label><input class="input" id="nationality" value="Thai" disabled /></div>
-                <div class="form-field"><label data-i18n="f.passport"></label><input class="input" id="passport" value="AB1234567" disabled /></div>
-                <div class="form-field"><label data-i18n="f.dob"></label><input class="input" id="dob" type="date" value="1998-05-14" disabled /></div>
-                <div class="form-field"><label data-i18n="f.address"></label><input class="input" id="address" value="Chiang Mai, Thailand" disabled /></div>
+                <div class="form-field"><label data-i18n="f.phone"></label><input class="input" id="phone" disabled /></div>
+                <div class="form-field"><label data-i18n="f.nationality"></label><input class="input" id="nationality" list="nationalityList" autocomplete="off" disabled /></div>
+                <div class="form-field"><label data-i18n="f.passport"></label><input class="input" id="passport" disabled /></div>
+                <div class="form-field"><label data-i18n="f.dob"></label><input class="input" id="dob" type="date" disabled /></div>
+                <div class="form-field"><label data-i18n="f.address"></label><input class="input" id="address" disabled /></div>
               </div>
               <button type="submit" class="btn btn-dark" id="saveBtn" style="display:none;margin-top:8px" data-i18n="panel.save"></button>
             </form>
@@ -84,22 +84,20 @@
             <div class="grid-2" style="margin-top:8px">
               <div class="form-field">
                 <label>Card Number</label>
-                <input class="input" placeholder="•••• •••• •••• ••••" />
+                <input id="cardNumber" class="input" placeholder="•••• •••• •••• ••••" maxlength="19" inputmode="numeric" />
               </div>
               <div class="form-field">
                 <label>Cardholder Name</label>
-                <input class="input" placeholder="Name on card" />
+                <input id="cardHolder" class="input" placeholder="Name on card" />
               </div>
               <div class="form-field">
                 <label>Expiry Date</label>
-                <input class="input" placeholder="MM / YY" />
+                <input id="cardExp" class="input" placeholder="MM / YY" maxlength="7" inputmode="numeric" />
+                <span id="cardExpErr" style="color:#e53e3e;font-size:.75rem;display:none">Invalid month (01–12)</span>
               </div>
-              <div class="form-field">
-                <label>CVV</label>
-                <input class="input" placeholder="•••" type="password" />
-              </div>
+
             </div>
-            <button class="btn btn-dark" style="margin-top:12px">Save Card</button>
+            <button class="btn btn-dark" id="saveCardBtn" style="margin-top:12px">Save Card</button>
           </div>
         </div>
 
@@ -108,6 +106,42 @@
   </main>
 
   <div id="footer-slot"></div>
+
+  <datalist id="nationalityList">
+    <option value="Afghan"><option value="Albanian"><option value="Algerian"><option value="American">
+    <option value="Andorran"><option value="Angolan"><option value="Argentine"><option value="Armenian">
+    <option value="Australian"><option value="Austrian"><option value="Azerbaijani"><option value="Bahamian">
+    <option value="Bahraini"><option value="Bangladeshi"><option value="Belarusian"><option value="Belgian">
+    <option value="Belizean"><option value="Bhutanese"><option value="Bolivian"><option value="Bosnian">
+    <option value="Brazilian"><option value="British"><option value="Bruneian"><option value="Bulgarian">
+    <option value="Cambodian"><option value="Cameroonian"><option value="Canadian"><option value="Chilean">
+    <option value="Chinese"><option value="Colombian"><option value="Costa Rican"><option value="Croatian">
+    <option value="Cuban"><option value="Cypriot"><option value="Czech"><option value="Danish">
+    <option value="Dutch"><option value="Ecuadorian"><option value="Egyptian"><option value="Emirati">
+    <option value="Estonian"><option value="Ethiopian"><option value="Filipino"><option value="Finnish">
+    <option value="French"><option value="Georgian"><option value="German"><option value="Ghanaian">
+    <option value="Greek"><option value="Guatemalan"><option value="Honduran"><option value="Hungarian">
+    <option value="Icelandic"><option value="Indian"><option value="Indonesian"><option value="Iranian">
+    <option value="Iraqi"><option value="Irish"><option value="Israeli"><option value="Italian">
+    <option value="Ivorian"><option value="Jamaican"><option value="Japanese"><option value="Jordanian">
+    <option value="Kazakhstani"><option value="Kenyan"><option value="Kuwaiti"><option value="Lao">
+    <option value="Latvian"><option value="Lebanese"><option value="Libyan"><option value="Lithuanian">
+    <option value="Luxembourgish"><option value="Malaysian"><option value="Maldivian"><option value="Maltese">
+    <option value="Mauritanian"><option value="Mauritian"><option value="Mexican"><option value="Moldovan">
+    <option value="Mongolian"><option value="Moroccan"><option value="Mozambican"><option value="Namibian">
+    <option value="Nepalese"><option value="New Zealander"><option value="Nicaraguan"><option value="Nigerian">
+    <option value="Norwegian"><option value="Omani"><option value="Pakistani"><option value="Palestinian">
+    <option value="Panamanian"><option value="Paraguayan"><option value="Peruvian"><option value="Polish">
+    <option value="Portuguese"><option value="Qatari"><option value="Romanian"><option value="Russian">
+    <option value="Rwandan"><option value="Saudi"><option value="Senegalese"><option value="Serbian">
+    <option value="Singaporean"><option value="Slovak"><option value="Slovenian"><option value="Somali">
+    <option value="South African"><option value="South Korean"><option value="Spanish"><option value="Sri Lankan">
+    <option value="Sudanese"><option value="Swedish"><option value="Swiss"><option value="Syrian">
+    <option value="Taiwanese"><option value="Tajik"><option value="Tanzanian"><option value="Thai">
+    <option value="Tunisian"><option value="Turkish"><option value="Ukrainian"><option value="Uruguayan">
+    <option value="Uzbek"><option value="Venezuelan"><option value="Vietnamese"><option value="Yemeni">
+    <option value="Zambian"><option value="Zimbabwean">
+  </datalist>
 
   <script src="js/icons.js"></script>
   <script src="js/i18n.js"></script>

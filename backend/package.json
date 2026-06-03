@@ -5,8 +5,7 @@
   "scripts": {
     "dev":   "node --experimental-sqlite --watch index.js",
     "start": "node --experimental-sqlite index.js",
-    "seed":  "node --experimental-sqlite seed.js",
-    "seed:export": "node --experimental-sqlite export-seed.js"
+    "seed":  "node --experimental-sqlite seed.js"
   },
   "dependencies": {
     "bcryptjs":     "^2.4.3",

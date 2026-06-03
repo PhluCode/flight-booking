@@ -15,7 +15,7 @@ export const register = async ({ full_name, email, password, phone }) => {
   ).run(full_name, email, password_hash, phone ?? null)
 
   const user = db.prepare('SELECT id, full_name, email, phone FROM users WHERE id = ?').get(lastInsertRowid)
-  const token = jwt.sign({ id: user.id, email: user.email, full_name: user.full_name }, process.env.JWT_SECRET, { expiresIn: '7d' })
+  const token = jwt.sign({ id: user.id, email: user.email, full_name: user.full_name, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN})
   return { user, token }
 }
 
@@ -26,7 +26,7 @@ export const login = async ({ email, password }) => {
   const match = await bcrypt.compare(password, user.password_hash)
   if (!match) throw new Error('Invalid email or password')
 
-  const token = jwt.sign({ id: user.id, email: user.email, full_name: user.full_name }, process.env.JWT_SECRET, { expiresIn: '7d' })
+  const token = jwt.sign({ id: user.id, email: user.email, full_name: user.full_name, phone: user.phone }, process.env.JWT_SECRET, { expiresIn: process.env.JWT_EXPIRES_IN || '7d' })
   return { user: { id: user.id, full_name: user.full_name, email: user.email, phone: user.phone }, token }
 }
 
