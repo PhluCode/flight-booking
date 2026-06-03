@@ -137,6 +137,12 @@
 
         <div class="seg-row">
           ${segs()}
+          <div class="class-select">
+            <select id="fClass">
+              <option value="Economy" data-i18n-opt="class.economy"></option>
+              <option value="Business" data-i18n-opt="class.business"></option>
+            </select>
+          </div>
         </div>
 
         <div class="fields-wrap">

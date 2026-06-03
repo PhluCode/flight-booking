@@ -16,6 +16,7 @@ const FLIGHT_SELECT = `
     f.gate,
     f.status,
     f.total_seats,
+    f.cabin_class,
     al.code  AS airline_code,
     al.name  AS airline_name,
     o.code   AS origin_code,
@@ -29,15 +30,26 @@ const FLIGHT_SELECT = `
   JOIN airports d  ON f.destination_airport_id = d.id
 `
 
-export const findFlights = ({ origin, destination, date }) => {
+export const findFlights = ({ origin, destination, date, cls }) => {
+  const params = [origin, destination, date]
+  const conditions = [
+    'o.code = ?',
+    'd.code = ?',
+    "DATE(f.departure_time) = ?",
+    "f.status != 'cancelled'",
+  ]
+
+  const normalizedClass = cls ? String(cls).trim().toLowerCase() : ''
+  if (normalizedClass) {
+    conditions.push('LOWER(f.cabin_class) = ?')
+    params.push(normalizedClass)
+  }
+
   return db.prepare(`
     ${FLIGHT_SELECT}
-    WHERE o.code = ?
-      AND d.code = ?
-      AND DATE(f.departure_time) = ?
-      AND f.status != 'cancelled'
+    WHERE ${conditions.join('      AND ')}
     ORDER BY f.departure_time
-  `).all(origin, destination, date)
+  `).all(...params)
 }
 
 export const getFlightById = (id) => {

@@ -27,8 +27,7 @@
   const searchCls  = qp.get("cls") || "Economy";
 
   const PRICE_MAX = 50000;
-  const BIZ_PREMIUM = 1000;   // Business ≈ base + premium (mirrors checkout seat fee)
-  const priceOf = (f) => f.price + (state.cls === "Business" ? BIZ_PREMIUM : 0);
+  const priceOf = (f) => f.price;
 
   function normCls(raw) {
     if (!raw) return "";
@@ -71,15 +70,25 @@
   async function fetchLeg(origin, destination, date) {
     if (!origin || !destination) return [];
     try {
-      const res = await apiFetch(`/api/flights?origin=${origin}&destination=${destination}&date=${date}`);
+      const res = await apiFetch(
+        `/api/flights?origin=${origin}&destination=${destination}&date=${date}&cls=${encodeURIComponent(state.cls)}`
+      );
       const data = await res.json();
       return data.map(mapFlight);
     } catch (e) { console.error("Failed to fetch flights:", e); return []; }
   }
 
+  let FLIGHTS_OUT = [];
+  let FLIGHTS_RET = [];
+
+  async function loadFlights() {
+    FLIGHTS_OUT = await fetchLeg(searchFrom, searchTo, searchDate);
+    FLIGHTS_RET = roundtrip ? await fetchLeg(searchTo, searchFrom, searchRet) : [];
+    render();
+  }
+
   /* ---- fetch outbound (+ return) ---- */
-  const FLIGHTS_OUT = await fetchLeg(searchFrom, searchTo, searchDate);
-  const FLIGHTS_RET = roundtrip ? await fetchLeg(searchTo, searchFrom, searchRet) : [];
+  await loadFlights();
 
   function updateAirlineFilters() {
     const src = roundtrip && activeLeg === "ret" ? FLIGHTS_RET : FLIGHTS_OUT;
@@ -365,7 +374,7 @@
     if (!btn || btn.dataset.cls === state.cls) return;
     state.cls = btn.dataset.cls;
     syncClsToggle();
-    render();
+    loadFlights();
   });
 
   const SORT_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h10M4 18h6"/></svg>';
